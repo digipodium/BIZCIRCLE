@@ -1,9 +1,9 @@
 "use client";
+import { Section, User } from "lucide-react";
 import { useState } from "react";
 
 export default function PersonalInfo() {
 
-const PersonalInfo = () => {
   const [form, setForm] = useState({
     fullName: "Rahul Mehta", email: "rahul.mehta@example.com",
     phone: "+91 98765 43210", dob: "1992-06-15",
@@ -26,7 +26,7 @@ const PersonalInfo = () => {
           <input className="inp" type="date" value={form.dob} onChange={e => set("dob", e.target.value)} /></div>
         <div><FieldLabel icon={User}>Gender <span style={{ color: "#94a3b8" }}>(optional)</span></FieldLabel>
           <select className="inp" value={form.gender} onChange={e => set("gender", e.target.value)}>
-            {["Male","Female","Non-binary","Prefer not to say"].map(g => <option key={g}>{g}</option>)}
+            {["Male", "Female", "Non-binary", "Prefer not to say"].map(g => <option key={g}>{g}</option>)}
           </select></div>
         <div><FieldLabel icon={MapPin}>Location</FieldLabel>
           <input className="inp" value={form.location} onChange={e => set("location", e.target.value)} /></div>
@@ -36,4 +36,3 @@ const PersonalInfo = () => {
     </Section>
   );
 };
-}

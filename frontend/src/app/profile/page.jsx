@@ -586,11 +586,11 @@ export default function App() {
   const [tab, setTab] = useState("overview");
 
   const tabs = [
-    { id: "overview",     label: "Overview" },
-    { id: "personal",     label: "Personal Info" },
+    { id: "overview", label: "Overview" },
+    { id: "personal", label: "Personal Info" },
     { id: "professional", label: "Professional" },
-    { id: "domains",      label: "Domains & Interests" },
-    { id: "referrals",    label: "Referrals" },
+    { id: "domains", label: "Domains & Interests" },
+    { id: "referrals", label: "Referrals" },
   ];
 
   return (
@@ -630,16 +630,15 @@ export default function App() {
           </div>
         </div>
       </div>
-
       {/* Page */}
       <div style={{ maxWidth: 1100, margin: "0 auto", padding: "24px 20px 60px" }}>
         <div className="page-grid">
           <div style={{ minWidth: 0, display: "flex", flexDirection: "column", gap: 20 }}>
-            {tab === "overview"     && <ProfileOverview />}
-            {tab === "personal"     && <PersonalInfo />}
+            {tab === "overview" && <ProfileOverview />}
+            {tab === "personal" && <PersonalInfo />}
             {tab === "professional" && <ProfessionalDetails />}
-            {tab === "domains"      && <DomainsInterests />}
-            {tab === "referrals"    && <Referrals />}
+            {tab === "domains" && <DomainsInterests />}
+            {tab === "referrals" && <Referrals />}
           </div>
           <div className="sidebar-col" style={{ position: "sticky", top: 80 }}>
             <Sidebar />
