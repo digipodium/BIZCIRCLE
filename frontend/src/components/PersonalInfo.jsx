@@ -1,5 +1,7 @@
 "use client";
-import { Section, User } from "lucide-react";
+import { 
+  User, Mail, Phone, Calendar, MapPin 
+} from "lucide-react";
 import { useState } from "react";
 
 export default function PersonalInfo() {
