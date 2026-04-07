@@ -1,23 +1,23 @@
 "use client";
+import { Award, BarChart2, Check, ChevronRight, Globe, TrendingUp, User } from "lucide-react";
 import { useState } from "react";
 
 export default function Sidebar() {
 
-const Sidebar = () => {
   const analytics = [
-    { label: "Profile Views",       val: "1,204", delta: "+18%",    up: true },
-    { label: "Connection Requests", val: "34",    delta: "+5 today", up: true },
-    { label: "Post Impressions",    val: "8.7k",  delta: "+12%",    up: true },
-    { label: "Search Appearances",  val: "421",   delta: "−3%",     up: false },
+    { label: "Profile Views", val: "1,204", delta: "+18%", up: true },
+    { label: "Connection Requests", val: "34", delta: "+5 today", up: true },
+    { label: "Post Impressions", val: "8.7k", delta: "+12%", up: true },
+    { label: "Search Appearances", val: "421", delta: "−3%", up: false },
   ];
   const checklist = [
-    { label: "Profile photo",      done: true },
-    { label: "Bio & location",     done: true },
-    { label: "Work experience",    done: true },
-    { label: "Skills (5+)",        done: true },
+    { label: "Profile photo", done: true },
+    { label: "Bio & location", done: true },
+    { label: "Work experience", done: true },
+    { label: "Skills (5+)", done: true },
     { label: "Domain & interests", done: true },
-    { label: "LinkedIn URL",       done: false },
-    { label: "Portfolio link",     done: false },
+    { label: "LinkedIn URL", done: false },
+    { label: "Portfolio link", done: false },
   ];
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
@@ -25,10 +25,10 @@ const Sidebar = () => {
       <div className="panel" style={{ padding: 20, animation: "fadeUp 0.4s cubic-bezier(0.22,1,0.36,1) 0.1s both" }}>
         <div className="section-eyebrow" style={{ marginBottom: 14 }}>Quick Actions</div>
         {[
-          { icon: User,       label: "View Public Profile" },
+          { icon: User, label: "View Public Profile" },
           { icon: TrendingUp, label: "Analytics Dashboard" },
-          { icon: Award,      label: "Claim Certifications" },
-          { icon: Globe,      label: "Share Profile Link" },
+          { icon: Award, label: "Claim Certifications" },
+          { icon: Globe, label: "Share Profile Link" },
         ].map(a => (
           <button key={a.label} className="action-btn">
             <a.icon size={15} color="#3b82f6" />
@@ -78,4 +78,3 @@ const Sidebar = () => {
     </div>
   );
 };
-}
