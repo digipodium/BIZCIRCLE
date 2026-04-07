@@ -1,138 +1,45 @@
-const express = require('express');
-
+const express = require("express");
 const router = express.Router();
+const User = require("../models/userModel");
 
-const Model = require('../models/userModel');
-
-const jwt = require('jsonwebtoken');
-require('dotenv').config();
-
-// route or endpoint
-router.post('/add', (req, res) => {
-
-    console.log(req.body);
-
-    new Model(req.body).save()
-    .then((result) => {
-        res.status(200).json(result);
-    })
-    .catch((err) => {
-        console.log(err);
-        res.status(500).json(err); 
-    });
-
+// GET user profile
+router.get("/:id", async (req, res) => {
+  try {
+    const user = await User.findById(req.params.id);
+    
+    // Check if user exists
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+    
+    res.json(user);
+  } catch (err) {
+    // Handling invalid ObjectId format errors
+    res.status(500).json({ error: "Server error", details: err.message });
+  }
 });
 
-// getall
-router.get('/getall', (req, res) => {
-    Model.find()
-    .then((result) => {
-        res.status(200).json(result);
-    })
-    .catch((err) => {
-        console.log(err);
-        res.status(500).json(err); 
-    });
+// UPDATE user profile
+router.put("/:id", async (req, res) => {
+  try {
+    const updatedUser = await User.findByIdAndUpdate(
+      req.params.id,
+      req.body,
+      { 
+        new: true, // Returns the modified document rather than the original
+        runValidators: true // Ensures the update follows your Model's rules
+      }
+    );
+
+    if (!updatedUser) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    res.json(updatedUser);
+  } catch (err) {
+    // Usually a 400 because update failures are often validation issues
+    res.status(400).json({ error: "Update failed", details: err.message });
+  }
 });
-
-//getbyemail
-// : denotes url parameter
-router.get('/getbyemail/:email', (req, res) => {
-    Model.findOne({ email: req.params.email })
-    .then((result) => {
-        res.status(200).json(result);
-    })
-    .catch((err) => {
-        console.log(err);
-        res.status(500).json(err); 
-    });
-});  
-
-// getbycity
-router.get('/getbycity/:city', (req, res) => {
-    Model.find({ city: req.params.city })
-    .then((result) => 
-        {res.status(200).json(result);
-    })
-    .catch((err) => {
-        console.log(err);
-        res.status(500).json(err); 
-    });
-});
-
-
-// getbyid
-router.get('/getbyid/:id', (req, res) => {
-    Model.findById(req.params.id)
-    .then((result) => {
-        res.status(200).json(result);
-    })
-    .catch((err) => {
-        console.log(err);
-        res.status(500).json(err); 
-    });
-});
-// delete
-router.delete('/delete/:id', (req, res) => {
-    Model.findByIdAndDelete(req.params.id)
-    .then((result) => {
-        res.status(200).json(result);
-    })
-    .catch((err) => {
-        console.log(err);
-        res.status(500).json(err);
-    });
-});
-// update
-router.put('/update/:id', (req, res) => {
-    Model.findByIdAndUpdate(req.params.id, req.body)
-    .then((result) => {
-        res.status(200).json(result);
-    })
-    .catch((err) => {
-        console.log(err);
-        res.status(500).json(err);
-    });
-});
-
-router.post('/authenticate', (req, res) => {
-    const { email, password } = req.body;
-
-    Model.findOne({ email, password })
-    .then((result) => {
-
-        // if login is successful
-        if (result) {
-
-            const {_id, email} = result;
-
-            jwt.sign(
-                { _id, email }, 
-                process.env.JWT_SECRET,  
-                { expiresIn: '1h' },
-                (err, token) => {
-                    if (err) {
-                        console.log(err);
-                        res.status(500).json(err);
-                    }else{
-                        res.status(200).json({ token });
-                    }
-                }
-            )
-
-        }else{
-            //if login fails
-            res.status(403).json({ message: 'Invalid credentials' });
-        }
-       
-
-    }).catch((err) => {
-        console.log(err);
-        res.status(500).json(err);
-    });
-
-
-});
-
 
 module.exports = router;
