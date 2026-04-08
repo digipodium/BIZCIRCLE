@@ -1,58 +1,85 @@
 "use client";
+
 import { useState } from "react";
+import {
+  User,
+  Briefcase,
+  Building2,
+  TrendingUp,
+  Mail,
+  Phone,
+} from "lucide-react";
 
-export default function ProfessionalDetails() {
+export default function ProfessionalDashboard() {
 
-const ProfessionalDetails = () => {
-  const [skills, setSkills] = useState(["Product Strategy","B2B SaaS","GTM","OKRs","Agile","Fundraising","User Research"]);
-  const [industry, setIndustry] = useState(["Technology","FinTech"]);
-  const [saved, setSaved] = useState(false);
-  const save = () => { setSaved(true); setTimeout(() => setSaved(false), 2200); };
-  const industries = ["Technology","Marketing","Finance","Healthcare","EdTech","FinTech","E-Commerce","Consulting"];
+  const [user] = useState({
+    name: "Rahul Mehta",
+    role: "Senior Product Strategist",
+    company: "GrowthLabs Pvt. Ltd.",
+    email: "rahul.mehta@example.com",
+    phone: "+91 98765 43210",
+    experience: "8+ Years",
+    skills: ["Product Strategy", "GTM", "Agile", "Fundraising"],
+  });
 
   return (
-    <Section title="Professional Details" icon={Briefcase} delay="0.08s" accent>
-      <div className="form-grid">
-        <div><FieldLabel icon={Award}>Role / Designation</FieldLabel>
-          <input className="inp" defaultValue="Senior Product Strategist" /></div>
-        <div><FieldLabel icon={Building2}>Company / Organisation</FieldLabel>
-          <input className="inp" defaultValue="GrowthLabs Pvt. Ltd." /></div>
-        <div><FieldLabel icon={Clock}>Years of Experience</FieldLabel>
-          <select className="inp" defaultValue="8–10">
-            {["0–1","1–3","3–5","5–8","8–10","10–15","15+"].map(y => <option key={y}>{y} years</option>)}
-          </select></div>
-        <div><FieldLabel icon={Briefcase}>Employment Type</FieldLabel>
-          <select className="inp" defaultValue="Full-time">
-            {["Full-time","Part-time","Freelance","Consultant","Founder"].map(t => <option key={t}>{t}</option>)}
-          </select></div>
+    <div className="p-6 bg-gray-100 min-h-screen">
+
+      {/* Header */}
+      <div className="bg-white p-6 rounded-xl shadow mb-6">
+        <h1 className="text-2xl font-bold flex items-center gap-2">
+          <User /> Welcome, {user.name}
+        </h1>
+        <p className="text-gray-500">{user.role} at {user.company}</p>
       </div>
-      <hr className="divider" />
-      <div style={{ marginBottom: 20 }}>
-        <div className="section-eyebrow" style={{ marginBottom: 4 }}>Industry / Domain</div>
-        <p style={{ fontSize: "0.78rem", color: "#94a3b8", marginBottom: 12 }}>Select all that apply</p>
-        <ChipGroup options={industries} selected={industry} setSelected={setIndustry} />
+
+      {/* Grid */}
+      <div className="grid md:grid-cols-3 gap-6">
+
+        {/* Profile Card */}
+        <div className="bg-white p-5 rounded-xl shadow">
+          <h2 className="font-semibold mb-3 flex items-center gap-2">
+            <User /> Profile
+          </h2>
+          <p><Mail size={14} className="inline mr-1"/> {user.email}</p>
+          <p><Phone size={14} className="inline mr-1"/> {user.phone}</p>
+        </div>
+
+        {/* Experience */}
+        <div className="bg-white p-5 rounded-xl shadow">
+          <h2 className="font-semibold mb-3 flex items-center gap-2">
+            <Briefcase /> Experience
+          </h2>
+          <p>{user.experience}</p>
+        </div>
+
+        {/* Company */}
+        <div className="bg-white p-5 rounded-xl shadow">
+          <h2 className="font-semibold mb-3 flex items-center gap-2">
+            <Building2 /> Company
+          </h2>
+          <p>{user.company}</p>
+        </div>
+
       </div>
-      <hr className="divider" />
-      <div style={{ marginBottom: 20 }}>
-        <div className="section-eyebrow" style={{ marginBottom: 4 }}>Skills</div>
-        <p style={{ fontSize: "0.78rem", color: "#94a3b8", marginBottom: 12 }}>Add your professional skills</p>
-        <SkillInput skills={skills} setSkills={setSkills} />
-      </div>
-      <hr className="divider" />
-      <div style={{ marginBottom: 20 }}>
-        <div className="section-eyebrow" style={{ marginBottom: 12 }}>Online Presence</div>
-        <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-          <div className="link-row"><Linkedin size={16} color="#2563eb" />
-            <input placeholder="linkedin.com/in/your-profile" defaultValue="linkedin.com/in/rahulmehta" /></div>
-          <div className="link-row"><Globe size={16} color="#0ea5e9" />
-            <input placeholder="yourportfolio.com" defaultValue="rahulmehta.com" /></div>
-          <div className="link-row"><Link size={16} color="#94a3b8" />
-            <input placeholder="Other link (GitHub, Dribbble…)" /></div>
+
+      {/* Skills Section */}
+      <div className="bg-white p-6 rounded-xl shadow mt-6">
+        <h2 className="font-semibold mb-4 flex items-center gap-2">
+          <TrendingUp /> Skills
+        </h2>
+        <div className="flex flex-wrap gap-2">
+          {user.skills.map((skill, index) => (
+            <span
+              key={index}
+              className="px-3 py-1 bg-black text-white rounded-full text-sm"
+            >
+              {skill}
+            </span>
+          ))}
         </div>
       </div>
-      <hr className="divider" />
-      <SaveBar onSave={save} saved={saved} />
-    </Section>
+
+    </div>
   );
-};
 }
