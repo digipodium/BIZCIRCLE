@@ -3,26 +3,26 @@ import { useEffect, useState } from 'react';
 import api from '@/lib/axios';
 import Link from 'next/link';
 import { Search, Plus, Users, Shield } from 'lucide-react';
+import { useRouter } from 'next/navigation';
 
 export default function GroupList() {
   const [groups, setGroups] = useState([]);
   const [loading, setLoading] = useState(true);
+  const router = useRouter();
 
   useEffect(() => {
     // Quick fake login flow for testing
     const ensureAuth = async () => {
       try {
         if (!localStorage.getItem('token')) {
-          const res = await api.post('/user/login', { 
-            email: 'test@admin.com', name: 'Test Admin', password: 'password123' 
-          });
-          localStorage.setItem('token', res.data.token);
-          localStorage.setItem('user', JSON.stringify(res.data.user));
+          router.push('/login');
+        } else {
+
+          fetchGroups();
         }
       } catch (err) {
         console.error("Auth helper failed:", err);
       }
-      fetchGroups();
     };
 
     ensureAuth();
@@ -49,7 +49,7 @@ export default function GroupList() {
       });
       fetchGroups();
     } catch (err) {
-        console.error(err);
+      console.error(err);
     }
   };
 
@@ -60,7 +60,7 @@ export default function GroupList() {
           <h1 className="text-4xl font-extrabold text-gray-900 tracking-tight">Discover Groups</h1>
           <p className="text-gray-500 mt-2 text-lg">Join communities that match your professional interests.</p>
         </div>
-        <button 
+        <button
           onClick={createDemoGroup}
           className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-xl font-medium shadow-sm shadow-blue-200 transition-all flex items-center"
         >
@@ -73,10 +73,10 @@ export default function GroupList() {
         <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
           <Search className="h-5 w-5 text-gray-400" />
         </div>
-        <input 
-          type="text" 
-          className="block w-full pl-11 pr-4 py-4 border-none rounded-2xl bg-white shadow-[0_4px_20px_-4px_rgba(0,0,0,0.05)] focus:ring-2 focus:ring-blue-500 focus:outline-none text-gray-700" 
-          placeholder="Search for marketing, tech, sales..." 
+        <input
+          type="text"
+          className="block w-full pl-11 pr-4 py-4 border-none rounded-2xl bg-white shadow-[0_4px_20px_-4px_rgba(0,0,0,0.05)] focus:ring-2 focus:ring-blue-500 focus:outline-none text-gray-700"
+          placeholder="Search for marketing, tech, sales..."
         />
       </div>
 
@@ -90,9 +90,9 @@ export default function GroupList() {
             <Link href={`/groups/${group._id}`} key={group._id} className="group cursor-pointer">
               <div className="bg-white rounded-2xl p-6 border border-gray-100 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 relative overflow-hidden">
                 <div className="absolute top-0 right-0 p-4 opacity-5 group-hover:opacity-10 transition-opacity">
-                   <Users className="w-24 h-24" />
+                  <Users className="w-24 h-24" />
                 </div>
-                
+
                 <div className="flex items-center space-x-3 mb-4">
                   <div className="w-12 h-12 rounded-xl bg-blue-100 flex items-center justify-center text-blue-600 font-bold text-xl">
                     {group.name.charAt(0)}
@@ -114,7 +114,7 @@ export default function GroupList() {
                   </div>
                   {group.isPrivate ? (
                     <div className="flex items-center text-sm text-amber-500 bg-amber-50 px-2 py-1 rounded-md">
-                       <Shield className="w-3 h-3 mr-1" /> Private
+                      <Shield className="w-3 h-3 mr-1" /> Private
                     </div>
                   ) : (
                     <div className="text-sm font-semibold text-blue-600">Join Now &rarr;</div>

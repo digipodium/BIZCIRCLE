@@ -1,34 +1,83 @@
-const { Schema, model } = require('../connection');
+// backend/models/userModel.js
+const mongoose = require("mongoose");
 
-const mySchema = new Schema({
-    // EXISTING FIELDS (KEEP)
-    name: { type: String, required: true },
-    email: { type: String, unique: true },
-    password: { type: String, required: true },
-    role: { type: String, default: 'user' },
+const userSchema = new mongoose.Schema({
+  name: String,
+  email: { type: String, unique: true },
+  password: String,
+  bio: String,
+  skills: [{ type: String }],
+  role: String,
+  organization: String,
 
-    // ───────── PROFILE INFO ─────────
-    phone: { type: String },
-    dob: { type: String },
-    gender: { type: String },
-    location: { type: String },
-    bio: { type: String },
+  // Extended profile fields
+  phone: String,
+  dob: String,
+  location: String,
+  website: String,
+  github: String,
+  linkedin: String,
+  profilePicture: String,
+  headline: String,
 
-    // ───────── PROFESSIONAL DETAILS ─────────
-    designation: { type: String },
-    company: { type: String },
-    experience: { type: String },
+  // Professional details
+  experience: [
+    {
+      role: String,
+      company: String,
+      period: String,
+      type: { type: String },
+      desc: String,
+    },
+  ],
+  projects: [
+    {
+      name: String,
+      desc: String,
+      stack: String,
+      link: String,
+    },
+  ],
+  education: [
+    {
+      institution: String,
+      degree: String,
+      period: String,
+      grade: String,
+    },
+  ],
 
-    // ───────── ARRAYS (IMPORTANT) ─────────
-    skills: { type: [String], default: [] },
-    industry: { type: [String], default: [] },
+  // Circles (already existed)
+  circles: [
+    {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Circle",
+    },
+  ],
 
-    // ───────── DOMAINS & INTERESTS ─────────
-    primaryDomain: { type: [String], default: [] },
-    secondaryInterests: { type: [String], default: [] },
-    networking: { type: [String], default: [] },
-    topics: { type: [String], default: [] }
+  // ── NEW FIELDS BELOW ──────────────────────────────
+
+  // Set automatically when user joins their first circle
+  // Used to enforce the domain similarity rule
+  primaryDomain: {
+    type: String,
+    default: "",
+  },
+
+  // People this user is connected with
+  connections: [
+    {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+    },
+  ],
+
+  // Count of referrals given — increment with $inc when a referral is sent
+  referralsGiven: {
+    type: Number,
+    default: 0,
+  },
 
 }, { timestamps: true });
 
-module.exports = model('users', mySchema);
+module.exports = mongoose.model("User", userSchema);

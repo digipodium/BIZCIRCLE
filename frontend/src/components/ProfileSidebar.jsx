@@ -1,14 +1,28 @@
 "use client";
 
 import { MapPin, Edit3, Share2, Users, GitBranch, Award } from "lucide-react";
-
-const stats = [
-  { label: "Circles Joined", value: "3", icon: GitBranch, color: "text-blue-600" },
-  { label: "Connections", value: "284", icon: Users, color: "text-emerald-600" },
-  { label: "Referrals", value: "17", icon: Award, color: "text-amber-600" },
-];
+import { useProfile } from "@/lib/useProfile";
 
 export default function ProfileSidebar() {
+  const { user, loading } = useProfile();
+
+  // Build initials from name
+  const initials = user?.name
+    ? user.name.split(" ").map((n) => n[0]).join("").toUpperCase().slice(0, 2)
+    : "??";
+
+  const stats = [
+    { label: "Circles Joined", value: user?.circles?.length ?? "—", icon: GitBranch, color: "text-blue-600" },
+    { label: "Connections", value: "—", icon: Users, color: "text-emerald-600" },
+    { label: "Referrals", value: "—", icon: Award, color: "text-amber-600" },
+  ];
+
+  const quickLinks = [
+    user?.github && { label: user.github, icon: "⌥" },
+    user?.linkedin && { label: user.linkedin, icon: "in" },
+    user?.website && { label: user.website, icon: "🌐" },
+  ].filter(Boolean);
+
   return (
     <div className="relative">
       {/* Card */}
@@ -17,7 +31,7 @@ export default function ProfileSidebar() {
         <div className="flex justify-center -mt-14 mb-4">
           <div className="relative">
             <div className="w-24 h-24 rounded-2xl bg-gradient-to-br from-blue-500 to-blue-700 flex items-center justify-center text-white text-3xl font-bold shadow-lg border-4 border-white">
-              AK
+              {loading ? "..." : initials}
             </div>
             <div className="absolute -bottom-1 -right-1 w-5 h-5 bg-emerald-500 rounded-full border-2 border-white" title="Online" />
           </div>
@@ -25,12 +39,27 @@ export default function ProfileSidebar() {
 
         {/* Name & Headline */}
         <div className="text-center mb-4">
-          <h1 className="text-xl font-bold text-slate-800 tracking-tight">Arjun Kapoor</h1>
-          <p className="text-sm text-blue-600 font-medium mt-0.5">Full Stack Developer · Final Year</p>
-          <div className="flex items-center justify-center gap-1 mt-2 text-slate-400 text-xs">
-            <MapPin size={12} />
-            <span>New Delhi, India</span>
-          </div>
+          {loading ? (
+            <div className="space-y-2">
+              <div className="h-5 bg-slate-100 rounded-full w-32 mx-auto animate-pulse" />
+              <div className="h-4 bg-slate-100 rounded-full w-48 mx-auto animate-pulse" />
+            </div>
+          ) : (
+            <>
+              <h1 className="text-xl font-bold text-slate-800 tracking-tight">
+                {user?.name || "Your Name"}
+              </h1>
+              <p className="text-sm text-blue-600 font-medium mt-0.5">
+                {user?.headline || user?.role || "Add your headline"}
+              </p>
+              {user?.location && (
+                <div className="flex items-center justify-center gap-1 mt-2 text-slate-400 text-xs">
+                  <MapPin size={12} />
+                  <span>{user.location}</span>
+                </div>
+              )}
+            </>
+          )}
         </div>
 
         {/* Action Buttons */}
@@ -69,36 +98,38 @@ export default function ProfileSidebar() {
         <div className="border-t border-slate-100 my-4" />
 
         {/* Domain Badge */}
-        <div className="bg-blue-50 rounded-xl p-3 text-center">
-          <p className="text-[11px] text-blue-400 uppercase tracking-widest font-semibold mb-1">Primary Domain</p>
-          <span className="inline-block bg-blue-600 text-white text-xs font-semibold px-3 py-1 rounded-full">
-            Web Development
-          </span>
-        </div>
+        {user?.organization && (
+          <div className="bg-blue-50 rounded-xl p-3 text-center">
+            <p className="text-[11px] text-blue-400 uppercase tracking-widest font-semibold mb-1">Organization</p>
+            <span className="inline-block bg-blue-600 text-white text-xs font-semibold px-3 py-1 rounded-full">
+              {user.organization}
+            </span>
+          </div>
+        )}
       </div>
 
       {/* Quick Links */}
-      <div className="mt-4 bg-white rounded-2xl shadow-md border border-slate-100 p-4">
-        <p className="text-[11px] uppercase tracking-widest text-slate-400 font-semibold mb-3">Quick Links</p>
-        <div className="space-y-2 text-sm">
-          {[
-            { label: "github.com/arjunkapoor", icon: "⌥" },
-            { label: "linkedin.com/in/arjunkapoor", icon: "in" },
-            { label: "arjunkapoor.dev", icon: "🌐" },
-          ].map((link) => (
-            <a
-              key={link.label}
-              href="#"
-              className="flex items-center gap-2 text-slate-500 hover:text-blue-600 transition-colors group"
-            >
-              <span className="text-xs font-mono bg-slate-50 rounded px-1.5 py-0.5 group-hover:bg-blue-50 transition-colors">
-                {link.icon}
-              </span>
-              <span className="truncate text-xs">{link.label}</span>
-            </a>
-          ))}
+      {quickLinks.length > 0 && (
+        <div className="mt-4 bg-white rounded-2xl shadow-md border border-slate-100 p-4">
+          <p className="text-[11px] uppercase tracking-widest text-slate-400 font-semibold mb-3">Quick Links</p>
+          <div className="space-y-2 text-sm">
+            {quickLinks.map((link) => (
+              <a
+                key={link.label}
+                href={`https://${link.label}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-2 text-slate-500 hover:text-blue-600 transition-colors group"
+              >
+                <span className="text-xs font-mono bg-slate-50 rounded px-1.5 py-0.5 group-hover:bg-blue-50 transition-colors">
+                  {link.icon}
+                </span>
+                <span className="truncate text-xs">{link.label}</span>
+              </a>
+            ))}
+          </div>
         </div>
-      </div>
+      )}
     </div>
   );
 }
