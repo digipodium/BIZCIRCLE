@@ -1,10 +1,11 @@
+require('dotenv').config();
 const mongoose = require('mongoose');
 
-const url = 'mongodb+srv://Shreya123:123abc@cluster0.qquky8z.mongodb.net/mydb1408?appName=Cluster0'
+const url = process.env.MONGO_URI;
 
 //  asynchronous function returns a promise (a special object)
 mongoose.connect(url)
-.then((result) => {
+ .then((result) => {
     console.log('database connected');
 })
 .catch((err) => {

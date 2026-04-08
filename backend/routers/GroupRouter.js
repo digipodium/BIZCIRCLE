@@ -1,96 +1,93 @@
 const express = require('express');
-
 const router = express.Router();
+const Group = require('../models/groupModel');
+const GroupMember = require('../models/groupMemberModel');
+const auth = require('../middleware/auth');
 
-const Model = require('../models/groupModel');
-
-// route or endpoint
-router.post('/add', (req, res) => {
-
-    console.log(req.body);
-
-    new Model(req.body).save()
-        .then((result) => {
-            res.status(200).json(result);
-        })
-        .catch((err) => {
-            console.log(err);
-            res.status(500).json(err);
+// Create Group
+router.post('/', auth, async (req, res) => {
+    try {
+        const { name, description, category, logo, rules, isPrivate } = req.body;
+        
+        const newGroup = await Group.create({
+            name, description, category, logo, rules, isPrivate,
+            createdBy: req.user.id
         });
 
+        // Add creator as Admin
+        await GroupMember.create({
+            group: newGroup._id,
+            user: req.user.id,
+            role: 'Admin',
+            status: 'Approved'
+        });
+
+        res.status(201).json(newGroup);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
 });
 
-// getall
-router.get('/getall', (req, res) => {
-    Model.find()
-        .then((result) => {
-            res.status(200).json(result);
-        })
-        .catch((err) => {
-            console.log(err);
-            res.status(500).json(err);
-        });
+// Get All Groups
+router.get('/', async (req, res) => {
+    try {
+        const groups = await Group.find().populate('createdBy', 'name email');
+        res.json(groups);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
 });
 
-//getbyemail
-// : denotes url parameter
-router.get('/getbyemail/:email', (req, res) => {
-    Model.findOne({ email: req.params.email })
-        .then((result) => {
-            res.status(200).json(result);
-        })
-        .catch((err) => {
-            console.log(err);
-            res.status(500).json(err);
-        });
+// Get Group By ID
+router.get('/:id', async (req, res) => {
+    try {
+        const group = await Group.findById(req.params.id).populate('createdBy', 'name email');
+        if (!group) return res.status(404).json({ message: 'Group not found' });
+        
+        const members = await GroupMember.find({ group: req.params.id, status: 'Approved' }).populate('user', 'name');
+        res.json({ group, members });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
 });
 
-// getbycity
-router.get('/getbycity/:city', (req, res) => {
-    Model.find({ city: req.params.city })
-        .then((result) => {
-            res.status(200).json(result);
-        })
-        .catch((err) => {
-            console.log(err);
-            res.status(500).json(err);
+// Join Group
+router.post('/:id/join', auth, async (req, res) => {
+    try {
+        const group = await Group.findById(req.params.id);
+        if (!group) return res.status(404).json({ message: 'Group not found' });
+
+        const existingMember = await GroupMember.findOne({ group: req.params.id, user: req.user.id });
+        if (existingMember) return res.status(400).json({ message: 'Already requested or joined' });
+
+        const status = group.isPrivate ? 'Pending' : 'Approved';
+        const member = await GroupMember.create({
+            group: req.params.id,
+            user: req.user.id,
+            role: 'Member',
+            status
         });
+
+        res.status(201).json(member);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
 });
 
+// Admin: Manage Member Status (Approve/Ban/Kick)
+router.put('/:id/members/:memberId', auth, async (req, res) => {
+    try {
+        // Verify requestor is admin
+        const adminCheck = await GroupMember.findOne({ group: req.params.id, user: req.user.id, role: 'Admin' });
+        if (!adminCheck) return res.status(403).json({ message: 'Admins only' });
 
-// getbyid
-router.get('/getbyid/:id', (req, res) => {
-    Model.findById(req.params.id)
-        .then((result) => {
-            res.status(200).json(result);
-        })
-        .catch((err) => {
-            console.log(err);
-            res.status(500).json(err);
-        });
+        const { status } = req.body; // 'Approved', 'Banned'
+        const member = await GroupMember.findByIdAndUpdate(req.params.memberId, { status }, { new: true });
+        
+        res.json(member);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
 });
-// delete
-router.delete('/delete/:id', (req, res) => {
-    Model.findByIdAndDelete(req.params.id)
-        .then((result) => {
-            res.status(200).json(result);
-        })
-        .catch((err) => {
-            console.log(err);
-            res.status(500).json(err);
-        });
-});
-// update
-router.put('/update/:id', (req, res) => {
-    Model.findByIdAndUpdate(req.params.id, req.body)
-        .then((result) => {
-            res.status(200).json(result);
-        })
-        .catch((err) => {
-            console.log(err);
-            res.status(500).json(err);
-        });
-});
-
 
 module.exports = router;
