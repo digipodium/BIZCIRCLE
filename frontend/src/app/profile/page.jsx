@@ -8,9 +8,23 @@ import PersonalInfo from "@/components/PersonalInfo";
 import ProfessionalDetails from "@/components/ProfessionalDetails";
 import Circles from "@/components/Circles";
 import Activity from "@/components/Activity";
+import { ProfileProvider, useProfile } from "@/lib/useProfile";
+
+function NavAvatar() {
+  const { user } = useProfile();
+  const initials = user?.name
+    ? user.name.split(" ").map((n) => n[0]).join("").toUpperCase().slice(0, 2)
+    : "?";
+  return (
+    <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-blue-700 flex items-center justify-center text-white text-xs font-semibold cursor-pointer">
+      {initials}
+    </div>
+  );
+}
 
 export default function ProfilePage() {
   const [activeTab, setActiveTab] = useState("overview");
+
 
   const renderTab = () => {
     switch (activeTab) {
@@ -30,6 +44,7 @@ export default function ProfilePage() {
   };
 
   return (
+    <ProfileProvider>
     <main className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/30 to-slate-100 font-sans">
       {/* Top Nav Bar */}
       <nav className="sticky top-0 z-50 bg-white/80 backdrop-blur-md border-b border-slate-200/80 px-6 py-3 flex items-center justify-between shadow-sm">
@@ -44,9 +59,7 @@ export default function ProfilePage() {
         <div className="flex items-center gap-3 text-sm text-slate-500">
           <span className="hidden sm:inline hover:text-blue-600 cursor-pointer transition-colors">Explore</span>
           <span className="hidden sm:inline hover:text-blue-600 cursor-pointer transition-colors">Circles</span>
-          <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-blue-700 flex items-center justify-center text-white text-xs font-semibold cursor-pointer">
-            AK
-          </div>
+          <NavAvatar />
         </div>
       </nav>
 
@@ -93,5 +106,6 @@ export default function ProfilePage() {
         }
       `}</style>
     </main>
+    </ProfileProvider>
   );
 }

@@ -1,25 +1,18 @@
 "use client";
 
-import { useState } from "react";
-import { MapPin, Users, Globe, Plus, Check, AlertTriangle, X, Info } from "lucide-react";
+import { useState, useEffect } from "react";
+import { MapPin, Users, Globe, Plus, Check, AlertTriangle, X, Info, Loader2 } from "lucide-react";
+import { useProfile } from "@/lib/useProfile";
+import api from "@/lib/axios";
 
 const MAX_CIRCLES = 3;
 
-const allCircles = [
-  { id: 1, name: "WebDev Delhi", domain: "Web Development", location: "New Delhi", members: 128, joined: true, color: "blue" },
-  { id: 2, name: "Frontend Mumbai", domain: "Frontend Development", location: "Mumbai", members: 94, joined: true, color: "indigo" },
-  { id: 3, name: "JS Bangalore", domain: "JavaScript", location: "Bangalore", members: 210, joined: true, color: "violet" },
-  { id: 4, name: "React Chennai", domain: "React.js", location: "Chennai", members: 73, joined: false, color: "sky" },
-  { id: 5, name: "Finance Hub Delhi", domain: "Finance", location: "New Delhi", members: 156, joined: false, color: "emerald" },
-  { id: 6, name: "Marketing Pune", domain: "Digital Marketing", location: "Pune", members: 89, joined: false, color: "amber" },
-];
-
-// Domains considered "similar" to Web Development
-const SIMILAR_DOMAINS = ["web development", "frontend development", "javascript", "react.js", "ui/ux", "full stack", "software development", "backend development", "app development"];
-
-function isSimilarDomain(domain) {
-  return SIMILAR_DOMAINS.some((d) => domain.toLowerCase().includes(d.split(" ")[0].toLowerCase()) || d.includes(domain.toLowerCase().split(" ")[0]));
-}
+const isSimilarDomain = (userDomain, circle) => {
+  if (!userDomain) return true;
+  const userDom = userDomain.toLowerCase();
+  const allDomains = [circle.domain, ...(circle.relatedDomains || [])].map(d => d.toLowerCase());
+  return allDomains.some(d => d.includes(userDom.split(' ')[0]) || userDom.includes(d.split(' ')[0]));
+};
 
 const colorConfig = {
   blue: { bg: "bg-blue-50", border: "border-blue-200", text: "text-blue-700", badge: "bg-blue-100 text-blue-700", dot: "bg-blue-500", btn: "bg-blue-600 hover:bg-blue-700" },
@@ -31,33 +24,72 @@ const colorConfig = {
 };
 
 export default function Circles() {
-  const [circles, setCircles] = useState(allCircles);
+  const { user, fetchProfile } = useProfile();
+  const [allCircles, setAllCircles] = useState([]);
   const [toast, setToast] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [actionLoading, setActionLoading] = useState(null);
 
-  const joinedCircles = circles.filter((c) => c.joined);
-  const availableCircles = circles.filter((c) => !c.joined);
+  useEffect(() => {
+    const fetchCircles = async () => {
+      try {
+        const { data } = await api.get("/api/circles");
+        const colors = ["blue", "indigo", "violet", "sky", "emerald", "amber"];
+        const colorfulData = data.map((c, i) => ({ ...c, color: colors[i % colors.length] }));
+        setAllCircles(colorfulData);
+      } catch (err) {
+        console.error("Error fetching circles:", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchCircles();
+  }, []);
+
+  const userCircleIds = user?.circles?.map((c) => c._id) || [];
+  const joinedCircles = allCircles.filter((c) => userCircleIds.includes(c._id));
+  const availableCircles = allCircles.filter((c) => !userCircleIds.includes(c._id));
 
   const showToast = (msg, type = "error") => {
     setToast({ msg, type });
     setTimeout(() => setToast(null), 3500);
   };
 
-  const handleJoin = (circle) => {
+  const handleJoin = async (circle) => {
     if (joinedCircles.length >= MAX_CIRCLES) {
       showToast("You can only join up to 3 circles in similar domains.", "error");
       return;
     }
-    if (!isSimilarDomain(circle.domain)) {
-      showToast(`"${circle.domain}" is not related to your primary domain (Web Development). Circles must belong to the same or closely related domain.`, "domain");
+    
+    // Front-end sanity check, actual enforcement is on the backend
+    if (user?.primaryDomain && !isSimilarDomain(user.primaryDomain, circle)) {
+      showToast(`"${circle.domain}" is not related to your primary domain. Circles must belong to the same or closely related domain.`, "domain");
       return;
     }
-    setCircles((prev) => prev.map((c) => c.id === circle.id ? { ...c, joined: true } : c));
-    showToast(`Successfully joined "${circle.name}"!`, "success");
+    
+    setActionLoading(circle._id);
+    try {
+      const { data } = await api.post("/api/circles/join", { circleId: circle._id });
+      showToast(data.message || `Successfully joined "${circle.name}"!`, "success");
+      await fetchProfile(); // refresh user data
+    } catch (err) {
+      showToast(err.response?.data?.error || "Failed to join circle", "error");
+    } finally {
+      setActionLoading(null);
+    }
   };
 
-  const handleLeave = (circle) => {
-    setCircles((prev) => prev.map((c) => c.id === circle.id ? { ...c, joined: false } : c));
-    showToast(`Left "${circle.name}".`, "info");
+  const handleLeave = async (circle) => {
+    setActionLoading(circle._id);
+    try {
+      const { data } = await api.post("/api/circles/leave", { circleId: circle._id });
+      showToast(data.message || `Left "${circle.name}".`, "info");
+      await fetchProfile(); // refresh user data
+    } catch (err) {
+      showToast(err.response?.data?.error || "Failed to leave circle", "error");
+    } finally {
+      setActionLoading(null);
+    }
   };
 
   return (
@@ -121,7 +153,7 @@ export default function Circles() {
             const c = colorConfig[circle.color];
             return (
               <div
-                key={circle.id}
+                key={circle._id}
                 className={`flex items-center gap-4 p-4 rounded-xl ${c.bg} border ${c.border} group hover:shadow-sm transition-all duration-200`}
               >
                 <div className={`w-10 h-10 rounded-xl ${c.dot} flex items-center justify-center text-white font-bold text-sm flex-shrink-0`}>
@@ -132,14 +164,15 @@ export default function Circles() {
                   <div className="flex flex-wrap items-center gap-3 mt-1 text-xs text-slate-500">
                     <span className={`${c.badge} px-2 py-0.5 rounded-full font-medium`}>{circle.domain}</span>
                     <span className="flex items-center gap-1"><MapPin size={10} />{circle.location}</span>
-                    <span className="flex items-center gap-1"><Users size={10} />{circle.members} members</span>
+                    <span className="flex items-center gap-1"><Users size={10} />{circle.memberCount || circle.members?.length || 0} members</span>
                   </div>
                 </div>
                 <button
                   onClick={() => handleLeave(circle)}
-                  className="flex-shrink-0 text-xs font-medium border border-slate-200 hover:border-red-300 bg-white hover:bg-red-50 text-slate-500 hover:text-red-600 px-3 py-1.5 rounded-lg transition-all duration-150"
+                  disabled={actionLoading === circle._id}
+                  className="flex-shrink-0 text-xs font-medium border border-slate-200 hover:border-red-300 bg-white hover:bg-red-50 text-slate-500 hover:text-red-600 px-3 py-1.5 rounded-lg transition-all duration-150 disabled:opacity-50 flex items-center gap-1"
                 >
-                  Leave
+                  {actionLoading === circle._id ? <Loader2 size={12} className="animate-spin" /> : "Leave"}
                 </button>
               </div>
             );
@@ -156,12 +189,12 @@ export default function Circles() {
         <div className="space-y-3">
           {availableCircles.map((circle) => {
             const c = colorConfig[circle.color];
-            const canJoin = isSimilarDomain(circle.domain);
+            const canJoin = !user?.primaryDomain || isSimilarDomain(user.primaryDomain, circle);
             const limitReached = joinedCircles.length >= MAX_CIRCLES;
 
             return (
               <div
-                key={circle.id}
+                key={circle._id}
                 className={`flex items-center gap-4 p-4 rounded-xl border transition-all duration-200 hover:shadow-sm
                   ${!canJoin ? "bg-slate-50 border-slate-100 opacity-70" : `${c.bg} ${c.border}`}`}
               >
@@ -178,19 +211,19 @@ export default function Circles() {
                   <div className="flex flex-wrap items-center gap-3 mt-1 text-xs text-slate-500">
                     <span className={`${canJoin ? c.badge : "bg-slate-100 text-slate-500"} px-2 py-0.5 rounded-full font-medium`}>{circle.domain}</span>
                     <span className="flex items-center gap-1"><MapPin size={10} />{circle.location}</span>
-                    <span className="flex items-center gap-1"><Users size={10} />{circle.members} members</span>
+                    <span className="flex items-center gap-1"><Users size={10} />{circle.memberCount || circle.members} members</span>
                   </div>
                 </div>
                 <button
                   onClick={() => handleJoin(circle)}
-                  disabled={limitReached && canJoin || !canJoin}
+                  disabled={(limitReached && canJoin) || !canJoin || actionLoading === circle._id}
                   className={`flex-shrink-0 flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-lg transition-all duration-150
                     ${canJoin && !limitReached
                       ? `${c.btn} text-white hover:scale-105 active:scale-95 shadow-sm`
                       : "bg-slate-100 text-slate-400 cursor-not-allowed"
                     }`}
                 >
-                  <Plus size={12} />
+                  {actionLoading === circle._id ? <Loader2 size={12} className="animate-spin" /> : <Plus size={12} />}
                   Join
                 </button>
               </div>

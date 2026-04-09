@@ -1,4 +1,5 @@
 require('dotenv').config();
+require('./connection');
 const express = require('express');
 const cors = require('cors');
 const http = require('http');
@@ -8,7 +9,7 @@ const UserRouter = require('./routers/UserRouter');
 const GroupRouter = require('./routers/GroupRouter');
 const MessageRouter = require('./routers/MessageRouter');
 const ActivityRouter = require('./routers/ActivityRouter');
-
+const circleRouter = require("./routers/CircleRouter");
 const app = express();
 const server = http.createServer(app);
 const io = new Server(server, { cors: { origin: '*' } });
@@ -25,7 +26,7 @@ app.use('/user', UserRouter);
 app.use('/group', GroupRouter);
 app.use('/api/messages', MessageRouter);
 app.use('/api', ActivityRouter); // Events, Polls, Notifications
-
+app.use("/api/circles", circleRouter);
 // Socket.io integration
 io.on('connection', (socket) => {
     console.log('User connected:', socket.id);
