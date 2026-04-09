@@ -19,7 +19,7 @@ export default function GroupDetail({ params }) {
   useEffect(() => {
     // Fetch group details
     api.get(`/group/${groupId}`).then(res => {
-      setGroup(res.data);
+      setGroup({ ...res.data.group, members: res.data.members });
     }).catch(err => {
       console.error(err);
       // Fallback for UI visualization if API fails
@@ -58,8 +58,8 @@ export default function GroupDetail({ params }) {
         
         <div className="relative z-10 flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
           <div className="flex items-center space-x-6">
-            <div className="w-20 h-20 bg-gradient-to-br from-blue-600 to-indigo-600 rounded-2xl text-white flex items-center justify-center text-3xl font-black shadow-lg shadow-blue-200">
-              {group?.name?.charAt(0) || 'G'}
+            <div className={`w-20 h-20 bg-gradient-to-br ${group?.color || 'from-blue-600 to-indigo-600'} rounded-2xl text-white flex items-center justify-center text-3xl font-black shadow-lg`}>
+              {group?.icon || group?.name?.charAt(0) || 'G'}
             </div>
             <div>
               <div className="flex items-center space-x-3 mb-1">
@@ -73,7 +73,12 @@ export default function GroupDetail({ params }) {
               <p className="text-gray-500 text-lg mb-3">{group?.description}</p>
               
               <div className="flex items-center space-x-4 text-sm font-medium">
-                <span className="bg-gray-100 text-gray-600 px-3 py-1 rounded-lg">{group?.category}</span>
+                <span className="bg-gray-100 text-gray-600 px-3 py-1 rounded-lg">
+                  {group?.domain || group?.category || 'General'}
+                </span>
+                <span className="bg-gray-100 text-gray-600 px-3 py-1 rounded-lg">
+                  📍 {group?.location || 'Global'}
+                </span>
                 <span className="flex items-center text-blue-600 bg-blue-50 px-3 py-1 rounded-lg">
                   <Users className="w-4 h-4 mr-1.5" />
                   {group?.members?.length || 0} Members
