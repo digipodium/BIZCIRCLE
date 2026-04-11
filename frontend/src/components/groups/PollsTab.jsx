@@ -69,9 +69,9 @@ export default function PollsTab({ groupId }) {
           </div>
         ) : (
           polls.map(poll => {
-            const user = JSON.parse(localStorage.getItem('user') || '{}');
+            const currentUserId = localStorage.getItem('userId');
             const totalVotes = poll.options.reduce((sum, opt) => sum + (opt.votes?.length || 0), 0);
-            const hasVoted = poll.options.some(opt => opt.votes?.some(vId => vId === user.id || vId?._id === user.id));
+            const hasVoted = poll.options.some(opt => opt.votes?.some(vId => vId === currentUserId || vId?._id === currentUserId));
 
             return (
               <div key={poll._id} className="bg-white p-8 rounded-[32px] border border-gray-100 shadow-sm hover:shadow-2xl transition-all group">
@@ -90,7 +90,7 @@ export default function PollsTab({ groupId }) {
                   {poll.options.map(option => {
                     const votesCount = option.votes?.length || 0;
                     const percentage = totalVotes > 0 ? Math.round((votesCount / totalVotes) * 100) : 0;
-                    const isMyOption = option.votes?.some(vId => vId === user.id || vId?._id === user.id);
+                    const isMyOption = option.votes?.some(vId => vId === currentUserId || vId?._id === currentUserId);
                     
                     return (
                       <div 

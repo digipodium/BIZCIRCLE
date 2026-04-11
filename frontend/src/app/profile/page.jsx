@@ -8,7 +8,9 @@ import PersonalInfo from "@/components/PersonalInfo";
 import ProfessionalDetails from "@/components/ProfessionalDetails";
 import Circles from "@/components/Circles";
 import Activity from "@/components/Activity";
-import { ProfileProvider, useProfile } from "@/lib/useProfile";
+import { useProfile } from "@/lib/useProfile";
+import { usePoints } from "@/context/PointsContext";
+import { Star } from "lucide-react";
 
 function NavAvatar() {
   const { user } = useProfile();
@@ -24,6 +26,7 @@ function NavAvatar() {
 
 export default function ProfilePage() {
   const [activeTab, setActiveTab] = useState("overview");
+  const { points } = usePoints();
 
 
   const renderTab = () => {
@@ -44,7 +47,6 @@ export default function ProfilePage() {
   };
 
   return (
-    <ProfileProvider>
     <main className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/30 to-slate-100 font-sans">
       {/* Top Nav Bar */}
       <nav className="sticky top-0 z-50 bg-white/80 backdrop-blur-md border-b border-slate-200/80 px-6 py-3 flex items-center justify-between shadow-sm">
@@ -57,8 +59,12 @@ export default function ProfilePage() {
           </span>
         </div>
         <div className="flex items-center gap-3 text-sm text-slate-500">
+          <div className="flex items-center gap-1.5 bg-amber-50 px-2.5 py-1 rounded-lg border border-amber-100/50 mr-2 group cursor-pointer hover:bg-amber-100 transition-colors">
+            <Star size={13} className="text-amber-500 fill-amber-500 group-hover:scale-110 transition-transform" />
+            <span className="text-amber-700 font-bold text-xs">{points}</span>
+          </div>
           <span className="hidden sm:inline hover:text-blue-600 cursor-pointer transition-colors">Explore</span>
-          <span className="hidden sm:inline hover:text-blue-600 cursor-pointer transition-colors">Circles</span>
+          <span className="hidden sm:inline hover:text-blue-600 cursor-pointer transition-colors text-blue-600 font-medium border-b-2 border-blue-600 pb-0.5">Profile</span>
           <NavAvatar />
         </div>
       </nav>
@@ -106,6 +112,5 @@ export default function ProfilePage() {
         }
       `}</style>
     </main>
-    </ProfileProvider>
   );
 }

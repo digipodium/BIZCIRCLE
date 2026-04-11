@@ -1,10 +1,13 @@
 "use client";
 
-import { MapPin, Edit3, Share2, Users, GitBranch, Award } from "lucide-react";
+import { MapPin, Edit3, Share2, Users, GitBranch, Award, Star } from "lucide-react";
 import { useProfile } from "@/lib/useProfile";
+import { usePoints } from "@/context/PointsContext";
+import Link from "next/link";
 
 export default function ProfileSidebar() {
   const { user, loading } = useProfile();
+  const { points } = usePoints();
 
   // Build initials from name
   const initials = user?.name
@@ -25,15 +28,28 @@ export default function ProfileSidebar() {
 
   return (
     <div className="relative">
-      {/* Card */}
+      {/* Main Card */}
       <div className="bg-white rounded-2xl shadow-md border border-slate-100 overflow-visible pt-2 pb-6 px-5">
-        {/* Avatar */}
+        {/* Avatar Area */}
         <div className="flex justify-center -mt-14 mb-4">
           <div className="relative">
             <div className="w-24 h-24 rounded-2xl bg-gradient-to-br from-blue-500 to-blue-700 flex items-center justify-center text-white text-3xl font-bold shadow-lg border-4 border-white">
               {loading ? "..." : initials}
             </div>
             <div className="absolute -bottom-1 -right-1 w-5 h-5 bg-emerald-500 rounded-full border-2 border-white" title="Online" />
+          </div>
+        </div>
+
+        {/* BizPoints Badge (Integrated) */}
+        <div className="flex justify-center mb-5">
+          <div className="bg-amber-50 border border-amber-100/60 rounded-xl px-4 py-2 flex items-center gap-3 shadow-sm shadow-amber-900/5 animate-fadeIn">
+            <div className="w-7 h-7 rounded-lg bg-amber-400 flex items-center justify-center shadow-sm">
+              <Star className="text-slate-900 fill-slate-900 w-3.5 h-3.5" />
+            </div>
+            <div>
+              <p className="text-[9px] font-bold text-amber-600 uppercase tracking-wider leading-tight">BizPoints Balance</p>
+              <p className="text-base font-bold text-slate-900 leading-none">{points}</p>
+            </div>
           </div>
         </div>
 
@@ -64,10 +80,10 @@ export default function ProfileSidebar() {
 
         {/* Action Buttons */}
         <div className="flex gap-2 mb-5">
-          <button className="flex-1 flex items-center justify-center gap-1.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded-xl py-2.5 transition-all duration-200 hover:scale-[1.02] active:scale-95 shadow-sm shadow-blue-200">
+          <Link href="/profile/edit" className="flex-1 flex items-center justify-center gap-1.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded-xl py-2.5 transition-all duration-200 hover:scale-[1.02] active:scale-95 shadow-sm shadow-blue-200">
             <Edit3 size={14} />
             Edit Profile
-          </button>
+          </Link>
           <button className="flex items-center justify-center gap-1.5 border border-slate-200 hover:border-blue-300 hover:bg-blue-50 text-slate-600 hover:text-blue-600 text-sm font-medium rounded-xl px-3 py-2.5 transition-all duration-200">
             <Share2 size={14} />
           </button>

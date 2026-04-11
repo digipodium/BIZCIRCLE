@@ -1,12 +1,13 @@
 "use client";
 import { useState, useEffect } from 'react';
 import api from '@/lib/axios';
-import { Calendar, Video, MapPin, Search, Plus } from 'lucide-react';
+import { Calendar, Video, MapPin, Search, Plus, Edit3, Trash2 } from 'lucide-react';
 import CreateEventModal from './CreateEventModal';
 
-export default function EventsTab({ groupId }) {
+export default function EventsTab({ groupId, members = [] }) {
   const [events, setEvents] = useState([]);
   const [showModal, setShowModal] = useState(false);
+  const [editingEvent, setEditingEvent] = useState(null);
   const [loading, setLoading] = useState(true);
   
   const fetchEvents = async () => {
@@ -24,15 +25,35 @@ export default function EventsTab({ groupId }) {
     fetchEvents();
   }, [groupId]);
 
-  const handleCreated = (newEvent) => {
-    setEvents(prev => [...prev, newEvent]);
+  const handleCreated = (savedEvent) => {
+    if (editingEvent) {
+      setEvents(prev => prev.map(ev => ev._id === savedEvent._id ? savedEvent : ev));
+    } else {
+      setEvents(prev => [...prev, savedEvent]);
+    }
+    setEditingEvent(null);
   };
 
-  const handleRSVP = async (eventId, currentStatus) => {
+  const handleEdit = (event) => {
+    setEditingEvent(event);
+    setShowModal(true);
+  };
+
+  const handleDelete = async (eventId) => {
+    if (!confirm("Are you sure you want to delete this event?")) return;
     try {
-      // Toggle logic: if already "Going", we might want to cancel, 
-      // but for simplicity let's just send "Going"
-      const res = await api.post(`/api/events/${eventId}/rsvp`, { status: 'Going' });
+      await api.delete(`/api/events/${eventId}`);
+      setEvents(prev => prev.filter(ev => ev._id !== eventId));
+    } catch (err) {
+      console.error(err);
+      alert("Failed to delete event.");
+    }
+  };
+
+  const handleRSVP = async (eventId, hasRSVPed) => {
+    try {
+      const status = hasRSVPed ? 'Not Attending' : 'Attending';
+      const res = await api.post(`/api/events/${eventId}/rsvp`, { status });
       // Update local state
       setEvents(prev => prev.map(ev => ev._id === eventId ? res.data : ev));
     } catch (err) {
@@ -69,17 +90,38 @@ export default function EventsTab({ groupId }) {
         ) : (
           events.map(ev => {
             const date = new Date(ev.dateTime);
-            const user = JSON.parse(localStorage.getItem('user') || '{}');
-            const hasRSVPed = ev.rsvp?.some(r => r.user === user.id || r.user?._id === user.id);
+            const currentUserId = localStorage.getItem('userId');
+            const hasRSVPed = ev.rsvp?.some(r => r.user === currentUserId || r.user?._id === currentUserId);
+            const isAdmin = members.some(m => (m.user?._id === currentUserId || m.user === currentUserId) && m.role === 'Admin' && m.status === 'Approved');
 
             return (
               <div key={ev._id} className="bg-white p-6 rounded-3xl border border-gray-100 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all group overflow-hidden relative">
                 <div className="absolute top-0 right-0 w-32 h-32 bg-blue-50 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity"></div>
                 
-                <div className="flex justify-between items-start mb-5 relative z-10">
-                  <div className="bg-blue-600 text-white py-2 px-4 rounded-2xl text-center shadow-lg shadow-blue-100">
-                    <div className="text-[10px] uppercase font-black tracking-widest opacity-80">{date.toLocaleString('default', { month: 'short' })}</div>
-                    <div className="text-2xl font-black">{date.getDate()}</div>
+                <div className="flex justify-between items-center mb-5 relative z-10">
+                  <div className="flex items-center space-x-2">
+                    <div className="bg-blue-600 text-white py-2 px-4 rounded-2xl text-center shadow-lg shadow-blue-100">
+                      <div className="text-[10px] uppercase font-black tracking-widest opacity-80">{date.toLocaleString('default', { month: 'short' })}</div>
+                      <div className="text-2xl font-black">{date.getDate()}</div>
+                    </div>
+                    {isAdmin && (
+                      <div className="flex flex-col space-y-1 ml-2">
+                        <button 
+                          onClick={() => handleEdit(ev)}
+                          className="p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all"
+                          title="Edit Event"
+                        >
+                          <Edit3 className="w-4 h-4" />
+                        </button>
+                        <button 
+                          onClick={() => handleDelete(ev._id)}
+                          className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all"
+                          title="Delete Event"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
+                    )}
                   </div>
                   <span className={`text-[11px] px-3 py-1 rounded-full font-bold uppercase tracking-wider border ${hasRSVPed ? 'bg-green-50 text-green-600 border-green-100' : 'bg-blue-50 text-blue-600 border-blue-100'}`}>
                     {hasRSVPed ? '✓ Attending' : 'Upcoming'}
@@ -118,14 +160,16 @@ export default function EventsTab({ groupId }) {
                   </div>
                   <button 
                     onClick={() => handleRSVP(ev._id, hasRSVPed)}
-                    disabled={hasRSVPed}
                     className={`px-6 py-2 rounded-xl text-sm font-black transition-all shadow-sm ${
                       hasRSVPed 
-                        ? 'bg-gray-100 text-gray-400 cursor-not-allowed' 
+                        ? 'bg-green-600 text-white hover:bg-red-500 hover:shadow-red-200 group/rsvp' 
                         : 'bg-gray-900 text-white hover:bg-blue-600 hover:shadow-blue-200'
                     }`}
                   >
-                    {hasRSVPed ? 'Going' : 'RSVP Now'}
+                    <span className={hasRSVPed ? 'group-hover/rsvp:hidden' : ''}>
+                      {hasRSVPed ? 'Attending' : 'RSVP Now'}
+                    </span>
+                    {hasRSVPed && <span className="hidden group-hover/rsvp:inline">Cancel</span>}
                   </button>
                 </div>
               </div>
@@ -137,7 +181,11 @@ export default function EventsTab({ groupId }) {
       {showModal && (
         <CreateEventModal 
           groupId={groupId} 
-          onClose={() => setShowModal(false)} 
+          event={editingEvent}
+          onClose={() => {
+            setShowModal(false);
+            setEditingEvent(null);
+          }} 
           onCreated={handleCreated} 
         />
       )}

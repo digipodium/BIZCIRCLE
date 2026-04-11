@@ -26,6 +26,7 @@ const signup = async (req, res) => {
       email,
       password: hashedPassword,
       role: role || 'user',
+      points: 50, // Initial points for profile creation/completion
     });
 
     const token = jwt.sign({ id: user._id, role: user.role }, JWT_SECRET, { expiresIn: '7d' });
@@ -105,7 +106,7 @@ const updateUserProfile = async (req, res) => {
     const allowedFields = [
       'name', 'bio', 'skills', 'role', 'organization',
       'phone', 'dob', 'location', 'website', 'github', 'linkedin',
-      'headline', 'experience', 'projects', 'education',
+      'headline', 'experience', 'projects', 'education', 'profilePicture',
     ];
 
     const updates = {};
@@ -133,4 +134,50 @@ const updateUserProfile = async (req, res) => {
   }
 };
 
-module.exports = { signup, login, getUserProfile, updateUserProfile };
+// PUT /user/points  (requires auth middleware)
+const updatePoints = async (req, res) => {
+  try {
+    const { amount } = req.body;
+    
+    if (amount === undefined) {
+      return res.status(400).json({ message: 'Amount is required' });
+    }
+
+    const user = await User.findByIdAndUpdate(
+      req.user.id,
+      { $inc: { points: amount } }, // Increment by amount (can be negative)
+      { new: true }
+    ).select('points');
+
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    res.json({ points: user.points });
+  } catch (err) {
+    console.error('Update points error:', err);
+    res.status(500).json({ message: 'Server error' });
+  }
+};
+
+// POST /user/upload-avatar (requires auth middleware and multer)
+const uploadAvatar = async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ message: 'No file uploaded' });
+    }
+
+    // Return the accessible URL
+    // We assume the backend is on port 5000 and serve static files from /uploads
+    const host = req.get('host');
+    const protocol = req.protocol;
+    const fileUrl = `${protocol}://${host}/uploads/${req.file.filename}`;
+
+    res.json({ url: fileUrl });
+  } catch (err) {
+    console.error('Avatar upload error:', err);
+    res.status(500).json({ message: 'Server error during upload' });
+  }
+};
+
+module.exports = { signup, login, getUserProfile, updateUserProfile, updatePoints, uploadAvatar };

@@ -3,12 +3,12 @@ import { useState } from "react";
 import api from "@/lib/axios";
 import { X, Calendar, Clock, AlignLeft, Video } from "lucide-react";
 
-export default function CreateEventModal({ groupId, onClose, onCreated }) {
+export default function CreateEventModal({ groupId, onClose, onCreated, event = null }) {
   const [form, setForm] = useState({
-    title: "",
-    description: "",
-    dateTime: "",
-    meetingLink: "",
+    title: event?.title || "",
+    description: event?.description || "",
+    dateTime: event?.dateTime ? new Date(event.dateTime).toISOString().slice(0, 16) : "",
+    meetingLink: event?.meetingLink || "",
   });
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
@@ -22,15 +22,22 @@ export default function CreateEventModal({ groupId, onClose, onCreated }) {
 
     setSubmitting(true);
     try {
-      const res = await api.post("/api/events", {
-        ...form,
-        group: groupId,
-      });
+      let res;
+      if (event) {
+        // Edit mode
+        res = await api.put(`/api/events/${event._id}`, form);
+      } else {
+        // Create mode
+        res = await api.post("/api/events", {
+          ...form,
+          group: groupId,
+        });
+      }
       onCreated(res.data);
       onClose();
     } catch (err) {
       console.error(err);
-      setError("Failed to create event. Please try again.");
+      setError(`Failed to ${event ? 'update' : 'create'} event. Please try again.`);
     } finally {
       setSubmitting(false);
     }
@@ -41,8 +48,8 @@ export default function CreateEventModal({ groupId, onClose, onCreated }) {
       <div className="bg-white w-full max-w-lg rounded-3xl overflow-hidden shadow-2xl animate-in fade-in zoom-in duration-200">
         <div className="bg-gradient-to-r from-blue-600 to-indigo-600 p-6 flex justify-between items-center text-white">
           <div>
-            <h2 className="text-xl font-bold">Plan an Event</h2>
-            <p className="text-blue-100 text-sm">Create an upcoming activity for your circle</p>
+            <h2 className="text-xl font-bold">{event ? 'Update Event' : 'Plan an Event'}</h2>
+            <p className="text-blue-100 text-sm">{event ? 'Modify the details of your activity' : 'Create an upcoming activity for your circle'}</p>
           </div>
           <button onClick={onClose} className="p-2 hover:bg-white/20 rounded-xl transition-colors">
             <X className="w-6 h-6" />
@@ -125,7 +132,7 @@ export default function CreateEventModal({ groupId, onClose, onCreated }) {
             disabled={submitting}
             className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 rounded-2xl shadow-lg shadow-blue-200 transition-all flex items-center justify-center space-x-2 disabled:opacity-50"
           >
-            {submitting ? "Scheduling..." : "✦ Schedule Event"}
+            {submitting ? (event ? "Updating..." : "Scheduling...") : (event ? "✦ Update Event" : "✦ Schedule Event")}
           </button>
         </form>
       </div>
