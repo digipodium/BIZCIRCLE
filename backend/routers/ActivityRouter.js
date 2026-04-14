@@ -4,6 +4,7 @@ const Event = require('../models/eventModel');
 const Poll = require('../models/pollModel');
 const Notification = require('../models/notificationModel');
 const Activity = require('../models/activityModel');  // NEW
+const GroupMember = require('../models/groupMemberModel');
 const auth = require('../middleware/auth');
 
 // ==========================
@@ -46,7 +47,14 @@ router.get('/feed', auth, async (req, res) => {
 router.post('/events', auth, async (req, res) => {
     try {
         const { group, title, description, dateTime, meetingLink } = req.body;
-        const newEvent = await Event.create({ group, title, description, dateTime, meetingLink });
+        const newEvent = await Event.create({ 
+            group, 
+            title, 
+            description, 
+            dateTime, 
+            meetingLink,
+            createdBy: req.user.id 
+        });
         res.status(201).json(newEvent);
     } catch (err) {
         res.status(500).json({ error: err.message });
@@ -62,16 +70,69 @@ router.get('/events/:groupId', async (req, res) => {
     }
 });
 
+// Update Event
+router.put('/events/:eventId', auth, async (req, res) => {
+    try {
+        const { title, description, dateTime, meetingLink } = req.body;
+        const event = await Event.findById(req.params.eventId);
+        if (!event) return res.status(404).json({ message: 'Event not found' });
+
+        // Check if user is admin of the group
+        const adminCheck = await GroupMember.findOne({
+            group: event.group,
+            user: req.user.id,
+            role: 'Admin'
+        });
+        if (!adminCheck) return res.status(403).json({ message: 'Only group admins can edit events' });
+
+        const updatedEvent = await Event.findByIdAndUpdate(
+            req.params.eventId,
+            { title, description, dateTime, meetingLink },
+            { new: true }
+        );
+        res.json(updatedEvent);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// Delete Event
+router.delete('/events/:eventId', auth, async (req, res) => {
+    try {
+        const event = await Event.findById(req.params.eventId);
+        if (!event) return res.status(404).json({ message: 'Event not found' });
+
+        // Check if user is admin of the group
+        const adminCheck = await GroupMember.findOne({
+            group: event.group,
+            user: req.user.id,
+            role: 'Admin'
+        });
+        if (!adminCheck) return res.status(403).json({ message: 'Only group admins can delete events' });
+
+        await Event.findByIdAndDelete(req.params.eventId);
+        res.json({ message: 'Event deleted successfully' });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
 router.post('/events/:eventId/rsvp', auth, async (req, res) => {
     try {
-        const { status } = req.body;
+        const { status } = req.body; // 'Attending' or 'Not Attending'
         const event = await Event.findById(req.params.eventId);
         if (!event) return res.status(404).json({ message: 'Event not found' });
 
         const rsvpIndex = event.rsvp.findIndex(r => r.user.toString() === req.user.id);
+        
         if (rsvpIndex > -1) {
-            event.rsvp[rsvpIndex].status = status;
-        } else {
+            // If already attending and status is 'Not Attending', or if toggle is desired
+            if (status === 'Not Attending') {
+                event.rsvp.splice(rsvpIndex, 1);
+            } else {
+                event.rsvp[rsvpIndex].status = status;
+            }
+        } else if (status === 'Attending') {
             event.rsvp.push({ user: req.user.id, status });
         }
 

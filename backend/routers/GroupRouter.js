@@ -8,10 +8,12 @@ const auth = require('../middleware/auth');
 // Create Group (unchanged)
 router.post('/', auth, async (req, res) => {
     try {
-        const { name, description, category, logo, rules, isPrivate } = req.body;
+        const { name, description, domain, location, icon, color, category, logo, rules } = req.body;
+        // Default isPrivate to true if not provided, for dashboard join requests logic
+        const isPrivate = req.body.isPrivate !== undefined ? req.body.isPrivate : true;
 
         const newGroup = await Group.create({
-            name, description, category, logo, rules, isPrivate,
+            name, description, domain, location, icon, color, category, logo, rules, isPrivate,
             createdBy: req.user.id
         });
 
@@ -33,6 +35,82 @@ router.post('/', auth, async (req, res) => {
 router.get('/', async (req, res) => {
     try {
         const groups = await Group.find().populate('createdBy', 'name email');
+        res.json(groups);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// Admin Dashboard Data
+router.get('/admin/dashboard', auth, async (req, res) => {
+    try {
+        // 1. Find groups where user is admin
+        const adminMemberships = await GroupMember.find({ user: req.user.id, role: 'Admin' });
+        const groupIds = adminMemberships.map(m => m.group);
+
+        // 2. Fetch the groups
+        const groups = await Group.find({ _id: { $in: groupIds } }).lean();
+
+        // 3. For each group, calculate stats
+        const dashboardGroups = await Promise.all(groups.map(async (group) => {
+            const membersCount = await GroupMember.countDocuments({ group: group._id, status: 'Approved' });
+            const pendingCount = await GroupMember.countDocuments({ group: group._id, status: 'Pending' });
+            return {
+                id: group._id,
+                name: group.name,
+                domain: group.domain || group.category,
+                location: group.location || 'Global',
+                members: membersCount,
+                pending: pendingCount,
+                color: group.color || 'from-blue-500 to-blue-700',
+                icon: group.icon || '💻',
+            };
+        }));
+
+        // 4. Fetch all pending requests for these groups
+        const pendingMemberships = await GroupMember.find({ 
+            group: { $in: groupIds },
+            status: 'Pending'
+        }).populate('user', 'name headline').populate('group', 'name color').lean();
+
+        const requests = pendingMemberships.map(req => {
+            // Get initials
+            const name = req.user?.name || "Unknown";
+            const initials = name.split(" ").map(n => n[0]).join("").toUpperCase().substring(0,2);
+            
+            // Format time ago naively
+            const timeDiff = Math.floor((new Date() - new Date(req.createdAt)) / 60000); // mins
+            let timeStr = `${timeDiff} mins ago`;
+            if (timeDiff > 60) timeStr = `${Math.floor(timeDiff/60)} hours ago`;
+            if (timeDiff > 1440) timeStr = `${Math.floor(timeDiff/1440)} days ago`;
+
+            return {
+                id: req._id,
+                userName: name,
+                avatar: initials,
+                groupName: req.group?.name || "Unknown",
+                groupId: req.group?._id,
+                role: req.user?.headline || "Member",
+                time: timeStr,
+                avatarBg: req.group?.color || "from-blue-400 to-blue-600",
+            };
+        });
+
+        res.json({ groups: dashboardGroups, requests });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// Get User's Joined Groups
+router.get('/my', auth, async (req, res) => {
+    try {
+        // 1. Find the memberships
+        const memberships = await GroupMember.find({ user: req.user.id, status: 'Approved' });
+        const groupIds = memberships.map(m => m.group);
+        
+        // 2. Fetch the groups and populate any necessary info
+        const groups = await Group.find({ _id: { $in: groupIds } }).populate('createdBy', 'name email');
         res.json(groups);
     } catch (err) {
         res.status(500).json({ error: err.message });

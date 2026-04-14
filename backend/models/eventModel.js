@@ -6,8 +6,9 @@ const mySchema = new Schema({
     description: { type: String },
     dateTime: { type: Date, required: true },
     meetingLink: { type: String },
+    createdBy: { type: Types.ObjectId, ref: 'User' },
     rsvp: [{
-        user: { type: Types.ObjectId, ref: 'users' },
+        user: { type: Types.ObjectId, ref: 'User' },
         status: { type: String, enum: ['Attending', 'Maybe', 'Not Attending'], default: 'Attending' }
     }]
 }, { timestamps: true });

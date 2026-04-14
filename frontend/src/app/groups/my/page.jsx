@@ -2,35 +2,32 @@
 import { useEffect, useState } from 'react';
 import api from '@/lib/axios';
 import Link from 'next/link';
-import { Search, Plus, Users, Shield } from 'lucide-react';
+import { Search, Users, Shield, ArrowRight } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 
-export default function GroupList() {
+export default function MyGroupsList() {
   const [groups, setGroups] = useState([]);
   const [loading, setLoading] = useState(true);
   const router = useRouter();
 
   useEffect(() => {
-    // Quick fake login flow for testing
     const ensureAuth = async () => {
       try {
         if (!localStorage.getItem('token')) {
           router.push('/login');
         } else {
-
-          fetchGroups();
+          fetchMyGroups();
         }
       } catch (err) {
         console.error("Auth helper failed:", err);
       }
     };
-
     ensureAuth();
   }, []);
 
-  const fetchGroups = async () => {
+  const fetchMyGroups = async () => {
     try {
-      const res = await api.get('/group');
+      const res = await api.get('/group/my');
       setGroups(res.data);
     } catch (err) {
       console.error(err);
@@ -39,31 +36,13 @@ export default function GroupList() {
     }
   };
 
-  const handleJoin = async (e, groupId) => {
-    e.preventDefault(); // Prevent navigating to the group page
-    try {
-      await api.post(`/group/${groupId}/join`);
-      alert("Successfully requested to join the group!");
-      // Optionally refresh groups or update state here
-    } catch(err) {
-      alert(err.response?.data?.message || err.response?.data?.error || "Failed to join group");
-    }
-  };
-
   return (
     <div className="p-8 pb-20">
       <div className="flex justify-between items-center mb-10">
         <div>
-          <h1 className="text-4xl font-extrabold text-gray-900 tracking-tight">Discover Groups</h1>
-          <p className="text-gray-500 mt-2 text-lg">Join communities that match your professional interests.</p>
+          <h1 className="text-4xl font-extrabold text-gray-900 tracking-tight">My Groups</h1>
+          <p className="text-gray-500 mt-2 text-lg">Circles you are actively participating in.</p>
         </div>
-        <button
-          onClick={() => router.push('/admin')}
-          className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-xl font-medium shadow-sm shadow-blue-200 transition-all flex items-center"
-        >
-          <Plus className="w-5 h-5 mr-2" />
-          Create Group
-        </button>
       </div>
 
       <div className="relative mb-8 max-w-xl">
@@ -73,13 +52,24 @@ export default function GroupList() {
         <input
           type="text"
           className="block w-full pl-11 pr-4 py-4 border-none rounded-2xl bg-white shadow-[0_4px_20px_-4px_rgba(0,0,0,0.05)] focus:ring-2 focus:ring-blue-500 focus:outline-none text-gray-700"
-          placeholder="Search for marketing, tech, sales..."
+          placeholder="Search your groups..."
         />
       </div>
 
       {loading ? (
         <div className="animate-pulse flex space-x-4">
           <div className="h-32 bg-gray-200 rounded-2xl w-full"></div>
+        </div>
+      ) : groups.length === 0 ? (
+        <div className="text-center bg-white p-12 rounded-3xl border border-gray-100 shadow-sm mt-8">
+          <div className="w-20 h-20 bg-blue-50 text-blue-500 rounded-full flex items-center justify-center mx-auto mb-4">
+            <Users className="w-8 h-8" />
+          </div>
+          <h3 className="text-xl font-bold text-gray-900 mb-2">No Groups Yet</h3>
+          <p className="text-gray-500 mb-6">You haven't joined any circles. Explore the community and find your people.</p>
+          <button onClick={() => router.push('/groups')} className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-xl font-medium shadow-sm transition-all">
+            Discover Groups
+          </button>
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -122,12 +112,9 @@ export default function GroupList() {
                   
                   {/* Footer Actions */}
                   <div className="flex items-center justify-between border-t border-gray-50 pt-4 mt-auto">
-                    <button 
-                      onClick={(e) => handleJoin(e, group._id)}
-                      className="bg-gray-900 hover:bg-gray-800 text-white px-4 py-2 rounded-lg text-sm font-semibold transition-colors w-full"
-                    >
-                      Join Circle
-                    </button>
+                    <div className="flex items-center text-sm font-semibold text-blue-600 group-hover:text-blue-700 w-full justify-center">
+                      Enter Group <ArrowRight className="w-4 h-4 ml-2 group-hover:translate-x-1 transition-transform" />
+                    </div>
                   </div>
                 </div>
               </div>

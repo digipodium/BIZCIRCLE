@@ -1,7 +1,12 @@
+"use client";
+
 import Link from 'next/link';
-import { Users, FileText, CheckSquare, Bell, LogOut, ArrowLeft } from 'lucide-react';
+import { Users, FileText, CheckSquare, Bell, LogOut, ArrowLeft, Star } from 'lucide-react';
+import { usePoints } from "@/context/PointsContext";
 
 export default function GroupsLayout({ children }) {
+  const { points } = usePoints();
+
   return (
     <div className="flex h-screen bg-gray-50 text-gray-900 font-sans">
       {/* Sidebar Navigation */}
@@ -10,6 +15,21 @@ export default function GroupsLayout({ children }) {
           <h1 className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
             BizCircle
           </h1>
+        </div>
+
+        {/* Points Balance */}
+        <div className="px-6 mb-2">
+          <div className="bg-amber-50 border border-amber-100 rounded-2xl p-4 shadow-sm">
+            <div className="flex items-center gap-3">
+              <div className="w-8 h-8 rounded-lg bg-amber-400 flex items-center justify-center shadow-sm">
+                <Star className="text-slate-900 fill-slate-900 w-4 h-4" />
+              </div>
+              <div>
+                <p className="text-[10px] font-bold text-amber-600 uppercase tracking-wider leading-tight">BizPoints Balance</p>
+                <p className="text-lg font-bold text-slate-900 leading-none">{points}</p>
+              </div>
+            </div>
+          </div>
         </div>
         
         <nav className="flex-1 px-4 space-y-2 mt-4">
