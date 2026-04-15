@@ -9,11 +9,13 @@ import {
   LogOut, 
   Menu, 
   X,
-  Star
+  Star,
+  Bell
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { usePoints } from "@/context/PointsContext";
+import NotificationBell from "@/components/NotificationBell";
 
 const Sidebar = () => {
   const [isOpen, setIsOpen] = useState(false);
@@ -21,10 +23,11 @@ const Sidebar = () => {
   const { points } = usePoints();
 
   const menuItems = [
-    { name: "Dashboard", icon: LayoutDashboard, href: "/dashboard" },
-    { name: "My Circles", icon: Users, href: "/dashboard/my-circles" },
-    { name: "Discover", icon: Compass, href: "/dashboard/discover" },
-    { name: "Profile", icon: UserCircle, href: "/profile" },
+    { name: "Dashboard",     icon: LayoutDashboard, href: "/dashboard"        },
+    { name: "My Circles",    icon: Users,           href: "/dashboard/my-circles" },
+    { name: "Discover",      icon: Compass,         href: "/dashboard/discover" },
+    { name: "Profile",       icon: UserCircle,      href: "/profile"           },
+    { name: "Notifications", icon: Bell,            href: "/notifications"     },
   ];
 
   const activeClass = "bg-blue-50 text-blue-600 font-semibold shadow-sm";
@@ -56,16 +59,19 @@ const Sidebar = () => {
         ${isOpen ? "translate-x-0" : "-translate-x-full"}
       `}>
         <div className="flex flex-col h-full p-6">
-          {/* Logo */}
-          <div className="flex items-center gap-3 mb-10 px-2">
-            <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-blue-600 to-blue-400 flex items-center justify-center shadow-lg shadow-blue-100">
-              <svg viewBox="0 0 20 20" fill="white" className="w-5 h-5">
-                <circle cx="5" cy="10" r="2.5"/><circle cx="15" cy="5" r="2.5"/><circle cx="15" cy="15" r="2.5"/>
-                <line x1="7.2" y1="9" x2="13" y2="6.2" stroke="white" strokeWidth="1.5"/>
-                <line x1="7.2" y1="11" x2="13" y2="13.8" stroke="white" strokeWidth="1.5"/>
-              </svg>
+          {/* Logo + bell */}
+          <div className="flex items-center justify-between gap-3 mb-10 px-2">
+            <div className="flex items-center gap-3">
+              <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-blue-600 to-blue-400 flex items-center justify-center shadow-lg shadow-blue-100">
+                <svg viewBox="0 0 20 20" fill="white" className="w-5 h-5">
+                  <circle cx="5" cy="10" r="2.5"/><circle cx="15" cy="5" r="2.5"/><circle cx="15" cy="15" r="2.5"/>
+                  <line x1="7.2" y1="9" x2="13" y2="6.2" stroke="white" strokeWidth="1.5"/>
+                  <line x1="7.2" y1="11" x2="13" y2="13.8" stroke="white" strokeWidth="1.5"/>
+                </svg>
+              </div>
+              <span className="font-bold text-xl text-slate-900 tracking-tight">BizCircle</span>
             </div>
-            <span className="font-bold text-xl text-slate-900 tracking-tight">BizCircle</span>
+            <NotificationBell />
           </div>
 
           {/* Points Balance */}

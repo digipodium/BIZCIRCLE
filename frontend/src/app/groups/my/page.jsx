@@ -66,7 +66,7 @@ export default function MyGroupsList() {
             <Users className="w-8 h-8" />
           </div>
           <h3 className="text-xl font-bold text-gray-900 mb-2">No Groups Yet</h3>
-          <p className="text-gray-500 mb-6">You haven't joined any circles. Explore the community and find your people.</p>
+          <p className="text-gray-500 mb-6">You haven&apos;t joined any circles. Explore the community and find your people.</p>
           <button onClick={() => router.push('/groups')} className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-xl font-medium shadow-sm transition-all">
             Discover Groups
           </button>

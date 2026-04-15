@@ -273,7 +273,7 @@ export default function SignupPage() {
                 {agreed && <svg className="w-2.5 h-2.5 text-white" fill="none" stroke="currentColor" strokeWidth="3" viewBox="0 0 24 24"><path d="M20 6L9 17l-5-5"/></svg>}
               </div>
               <span className="text-sm text-slate-500 leading-relaxed">
-                I agree to BizCircle's{" "}
+                I agree to BizCircle&apos;s{" "}
                 <a href="#" className="text-blue-600 font-semibold hover:underline">Terms of Service</a>{" "}
                 and{" "}
                 <a href="#" className="text-blue-600 font-semibold hover:underline">Privacy Policy</a>

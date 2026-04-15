@@ -178,7 +178,7 @@ export default function Circles() {
             );
           })}
           {joinedCircles.length === 0 && (
-            <p className="text-slate-400 text-sm text-center py-4">You haven't joined any circles yet.</p>
+            <p className="text-slate-400 text-sm text-center py-4">You haven&apos;t joined any circles yet.</p>
           )}
         </div>
       </div>

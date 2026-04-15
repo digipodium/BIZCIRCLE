@@ -2,8 +2,9 @@ const express = require('express');
 const router = express.Router();
 const Group = require('../models/groupModel');
 const GroupMember = require('../models/groupMemberModel');
-const Activity = require('../models/activityModel');  // NEW
+const Activity = require('../models/activityModel');
 const auth = require('../middleware/auth');
+const { createNotification } = require('../controllers/notificationController');
 
 // Create Group (unchanged)
 router.post('/', auth, async (req, res) => {
@@ -172,10 +173,9 @@ router.post('/:id/join', auth, async (req, res) => {
     }
 });
 
-// Admin: Manage Member Status — UPDATED: logs activity when member is approved
+// Admin: Manage Member Status — logs activity + fires notification on approval/ban
 router.put('/:id/members/:memberId', auth, async (req, res) => {
     try {
-        // Verify requestor is admin
         const adminCheck = await GroupMember.findOne({
             group: req.params.id,
             user: req.user.id,
@@ -190,9 +190,11 @@ router.put('/:id/members/:memberId', auth, async (req, res) => {
             { new: true }
         ).populate('user', 'name');
 
-        // If admin just approved a pending request, log it as a join activity
+        const group = await Group.findById(req.params.id);
+        const io = req.app.get('io');
+
         if (status === 'Approved' && member?.user) {
-            const group = await Group.findById(req.params.id);
+            // Activity log
             await Activity.create({
                 userId: member.user._id,
                 type: 'circle_joined',
@@ -200,6 +202,31 @@ router.put('/:id/members/:memberId', auth, async (req, res) => {
                 targetModel: 'Group',
                 description: `Joined group "${group.name}"`,
                 meta: new Map([['groupName', group.name]]),
+            });
+            // Notification to the user whose request was approved
+            await createNotification({
+                io,
+                recipient: member.user._id,
+                sender: req.user.id,
+                category: 'connection',
+                type: 'connection_accepted',
+                message: `Your request to join "${group.name}" has been approved! Welcome aboard.`,
+                priority: 'high',
+                linkTo: `/groups/${group._id}`,
+                meta: { groupName: group.name },
+            });
+        }
+
+        if (status === 'Banned' && member?.user) {
+            await createNotification({
+                io,
+                recipient: member.user._id,
+                category: 'announcement',
+                type: 'system_alert',
+                message: `You have been removed from the group "${group.name}".`,
+                priority: 'high',
+                linkTo: '/dashboard/discover',
+                meta: { groupName: group.name },
             });
         }
 

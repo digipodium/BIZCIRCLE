@@ -9,7 +9,8 @@ const UserRouter = require('./routers/UserRouter');
 const GroupRouter = require('./routers/GroupRouter');
 const MessageRouter = require('./routers/MessageRouter');
 const ActivityRouter = require('./routers/ActivityRouter');
-const circleRouter = require("./routers/CircleRouter");
+const circleRouter = require('./routers/CircleRouter');
+const NotificationRouter = require('./routers/NotificationRouter');
 const app = express();
 const server = http.createServer(app);
 const io = new Server(server, { cors: { origin: '*' } });
@@ -25,15 +26,26 @@ app.use('/uploads', express.static('public/uploads'));
 app.use('/user', UserRouter);
 app.use('/group', GroupRouter);
 app.use('/api/messages', MessageRouter);
-app.use('/api', ActivityRouter); // Events, Polls, Notifications
-app.use("/api/circles", circleRouter);
+app.use('/api', ActivityRouter); // Events, Polls, legacy Notifications
+app.use('/api/circles', circleRouter);
+app.use('/api/notifications', NotificationRouter); // Full notification module
+// Expose io so controllers can call io.to(...).emit(...)
+app.set('io', io);
+
 // Socket.io integration
 io.on('connection', (socket) => {
     console.log('User connected:', socket.id);
 
+    // Group chat room
     socket.on('join_group', (groupId) => {
         socket.join(groupId);
         console.log(`Socket ${socket.id} joined group ${groupId}`);
+    });
+
+    // Personal notification room — frontend calls: socket.emit('join_user', userId)
+    socket.on('join_user', (userId) => {
+        socket.join(`user_${userId}`);
+        console.log(`Socket ${socket.id} joined personal room user_${userId}`);
     });
 
     socket.on('send_message', async (data) => {

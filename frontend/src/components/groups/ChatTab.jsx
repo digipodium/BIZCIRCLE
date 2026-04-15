@@ -18,6 +18,7 @@ export default function ChatTab({ groupId }) {
 
     // Socket setup
     const newSocket = io(process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000');
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setSocket(newSocket);
 
     newSocket.emit('join_group', groupId);
