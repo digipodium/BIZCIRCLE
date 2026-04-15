@@ -4,7 +4,7 @@ import api from '@/lib/axios';
 import { Calendar, Video, MapPin, Search, Plus, Edit3, Trash2 } from 'lucide-react';
 import CreateEventModal from './CreateEventModal';
 
-export default function EventsTab({ groupId, members = [] }) {
+export default function EventsTab({ targetId, targetModel = 'Group', members = [] }) {
   const [events, setEvents] = useState([]);
   const [showModal, setShowModal] = useState(false);
   const [editingEvent, setEditingEvent] = useState(null);
@@ -12,7 +12,7 @@ export default function EventsTab({ groupId, members = [] }) {
   
   const fetchEvents = async () => {
     try {
-      const res = await api.get(`/api/events/${groupId}`);
+      const res = await api.get(`/api/events/${targetId}`);
       setEvents(res.data);
     } catch (err) {
       console.error(err);
@@ -23,7 +23,7 @@ export default function EventsTab({ groupId, members = [] }) {
 
   useEffect(() => {
     fetchEvents();
-  }, [groupId]);
+  }, [targetId]);
 
   const handleCreated = (savedEvent) => {
     if (editingEvent) {
@@ -180,7 +180,8 @@ export default function EventsTab({ groupId, members = [] }) {
 
       {showModal && (
         <CreateEventModal 
-          groupId={groupId} 
+          targetId={targetId} 
+          targetModel={targetModel}
           event={editingEvent}
           onClose={() => {
             setShowModal(false);

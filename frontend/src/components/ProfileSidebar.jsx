@@ -14,8 +14,10 @@ export default function ProfileSidebar() {
     ? user.name.split(" ").map((n) => n[0]).join("").toUpperCase().slice(0, 2)
     : "??";
 
+  const totalJoined = (user?.circles?.length || 0) + (user?.joinedGroups?.length || 0);
+
   const stats = [
-    { label: "Circles Joined", value: user?.circles?.length ?? "—", icon: GitBranch, color: "text-blue-600" },
+    { label: "Circles Joined", value: loading ? "—" : totalJoined, icon: GitBranch, color: "text-blue-600" },
     { label: "Connections", value: "—", icon: Users, color: "text-emerald-600" },
     { label: "Referrals", value: "—", icon: Award, color: "text-amber-600" },
   ];

@@ -2,8 +2,13 @@ const express = require('express');
 const router = express.Router();
 const Group = require('../models/groupModel');
 const GroupMember = require('../models/groupMemberModel');
-const Activity = require('../models/activityModel');  // NEW
+const Activity = require('../models/activityModel');
+<<<<<<< HEAD
+const User = require('../models/userModel');
+=======
+>>>>>>> befb281570cd00c9c3ab3852643bee84f6259d4d
 const auth = require('../middleware/auth');
+const { createNotification } = require('../controllers/notificationController');
 
 // Create Group (unchanged)
 router.post('/', auth, async (req, res) => {
@@ -140,11 +145,26 @@ router.post('/:id/join', auth, async (req, res) => {
         const group = await Group.findById(req.params.id);
         if (!group) return res.status(404).json({ message: 'Group not found' });
 
-        const existingMember = await GroupMember.findOne({
-            group: req.params.id,
-            user: req.user.id
-        });
+        const [existingMember, user] = await Promise.all([
+            GroupMember.findOne({ group: req.params.id, user: req.user.id }),
+            User.findById(req.user.id)
+        ]);
+
         if (existingMember) return res.status(400).json({ message: 'Already requested or joined' });
+
+        // Domain similarity check
+        if (user.primaryDomain) {
+            const userDomain = user.primaryDomain.toLowerCase();
+            const groupDomain = (group.domain || group.category || '').toLowerCase();
+            const isSimilar = groupDomain.includes(userDomain.split(' ')[0]) ||
+                             userDomain.includes(groupDomain.split(' ')[0]);
+            
+            if (!isSimilar && groupDomain !== 'general') {
+                return res.status(400).json({ 
+                    message: `"${group.name}" is in a different domain (${group.domain}). Circles/Groups must be in similar domains.` 
+                });
+            }
+        }
 
         const status = group.isPrivate ? 'Pending' : 'Approved';
         const member = await GroupMember.create({
@@ -156,14 +176,19 @@ router.post('/:id/join', auth, async (req, res) => {
 
         // Log activity only if directly approved (not pending approval)
         if (status === 'Approved') {
-            await Activity.create({
-                userId: req.user.id,
-                type: 'circle_joined',
-                targetId: group._id,
-                targetModel: 'Group',
-                description: `Joined group "${group.name}"`,
-                meta: new Map([['groupName', group.name], ['category', group.category || '']]),
-            });
+            await Promise.all([
+                User.findByIdAndUpdate(req.user.id, {
+                    $setOnInsert: { primaryDomain: group.domain || group.category }
+                }),
+                Activity.create({
+                    userId: req.user.id,
+                    type: 'circle_joined',
+                    targetId: group._id,
+                    targetModel: 'Group',
+                    description: `Joined group "${group.name}"`,
+                    meta: new Map([['groupName', group.name], ['category', group.category || '']]),
+                })
+            ]);
         }
 
         res.status(201).json(member);
@@ -172,10 +197,9 @@ router.post('/:id/join', auth, async (req, res) => {
     }
 });
 
-// Admin: Manage Member Status — UPDATED: logs activity when member is approved
+// Admin: Manage Member Status — logs activity + fires notification on approval/ban
 router.put('/:id/members/:memberId', auth, async (req, res) => {
     try {
-        // Verify requestor is admin
         const adminCheck = await GroupMember.findOne({
             group: req.params.id,
             user: req.user.id,
@@ -190,9 +214,11 @@ router.put('/:id/members/:memberId', auth, async (req, res) => {
             { new: true }
         ).populate('user', 'name');
 
-        // If admin just approved a pending request, log it as a join activity
+        const group = await Group.findById(req.params.id);
+        const io = req.app.get('io');
+
         if (status === 'Approved' && member?.user) {
-            const group = await Group.findById(req.params.id);
+            // Activity log
             await Activity.create({
                 userId: member.user._id,
                 type: 'circle_joined',
@@ -200,6 +226,31 @@ router.put('/:id/members/:memberId', auth, async (req, res) => {
                 targetModel: 'Group',
                 description: `Joined group "${group.name}"`,
                 meta: new Map([['groupName', group.name]]),
+            });
+            // Notification to the user whose request was approved
+            await createNotification({
+                io,
+                recipient: member.user._id,
+                sender: req.user.id,
+                category: 'connection',
+                type: 'connection_accepted',
+                message: `Your request to join "${group.name}" has been approved! Welcome aboard.`,
+                priority: 'high',
+                linkTo: `/groups/${group._id}`,
+                meta: { groupName: group.name },
+            });
+        }
+
+        if (status === 'Banned' && member?.user) {
+            await createNotification({
+                io,
+                recipient: member.user._id,
+                category: 'announcement',
+                type: 'system_alert',
+                message: `You have been removed from the group "${group.name}".`,
+                priority: 'high',
+                linkTo: '/dashboard/discover',
+                meta: { groupName: group.name },
             });
         }
 

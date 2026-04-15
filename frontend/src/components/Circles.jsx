@@ -5,7 +5,7 @@ import { MapPin, Users, Globe, Plus, Check, AlertTriangle, X, Info, Loader2 } fr
 import { useProfile } from "@/lib/useProfile";
 import api from "@/lib/axios";
 
-const MAX_CIRCLES = 3;
+// const MAX_CIRCLES = 3; // Removed per user request
 
 const isSimilarDomain = (userDomain, circle) => {
   if (!userDomain) return true;
@@ -46,9 +46,16 @@ export default function Circles() {
     fetchCircles();
   }, []);
 
-  const userCircleIds = user?.circles?.map((c) => c._id) || [];
-  const joinedCircles = allCircles.filter((c) => userCircleIds.includes(c._id));
-  const availableCircles = allCircles.filter((c) => !userCircleIds.includes(c._id));
+  const userCircleIds = user?.circles?.map((c) => c._id || c) || [];
+  const userGroupIds = user?.joinedGroups?.map((g) => g._id || g) || [];
+  const allJoinedIds = [...userCircleIds, ...userGroupIds];
+
+  const joinedCircles = [
+    ...(allCircles.filter((c) => userCircleIds.includes(c._id))),
+    ...(user?.joinedGroups || [])
+  ];
+  
+  const availableCircles = allCircles.filter((c) => !allJoinedIds.includes(c._id));
 
   const showToast = (msg, type = "error") => {
     setToast({ msg, type });
@@ -56,10 +63,12 @@ export default function Circles() {
   };
 
   const handleJoin = async (circle) => {
+    /* 
     if (joinedCircles.length >= MAX_CIRCLES) {
       showToast("You can only join up to 3 circles in similar domains.", "error");
       return;
     }
+    */
     
     // Front-end sanity check, actual enforcement is on the backend
     if (user?.primaryDomain && !isSimilarDomain(user.primaryDomain, circle)) {
@@ -113,36 +122,20 @@ export default function Circles() {
         </div>
       )}
 
-      {/* Header */}
       <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-5">
         <div className="flex items-center justify-between flex-wrap gap-3">
           <div>
             <h2 className="font-bold text-slate-800 text-base">My Circles</h2>
-            <p className="text-xs text-slate-400 mt-0.5">You can join up to 3 circles in the same or closely related domain.</p>
+            <p className="text-xs text-slate-400 mt-0.5">Circles and niche groups you've joined in your domain.</p>
           </div>
-          {/* Progress Indicator */}
-          <div className="flex items-center gap-2">
-            {[1, 2, 3].map((n) => (
-              <div
-                key={n}
-                className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold border-2 transition-all duration-300
-                  ${n <= joinedCircles.length ? "bg-blue-600 border-blue-600 text-white scale-110" : "bg-white border-slate-200 text-slate-400"}`}
-              >
-                {n <= joinedCircles.length ? <Check size={13} /> : n}
-              </div>
-            ))}
-            <span className={`text-xs font-bold ml-1 ${joinedCircles.length >= 3 ? "text-blue-600" : "text-slate-400"}`}>
-              {joinedCircles.length}/3
+          {/* Progress Indicator removed per user request */}
+          <div className="flex items-center gap-2 bg-blue-50 px-3 py-1.5 rounded-xl border border-blue-100">
+            <Users size={14} className="text-blue-600" />
+            <span className="text-xs font-bold text-blue-700">
+              {joinedCircles.length} Joined
             </span>
           </div>
         </div>
-
-        {joinedCircles.length >= MAX_CIRCLES && (
-          <div className="mt-4 flex items-start gap-2 bg-amber-50 border border-amber-200 rounded-xl p-3 text-sm text-amber-700">
-            <AlertTriangle size={15} className="flex-shrink-0 mt-0.5" />
-            <span>You can only join up to 3 circles in similar domains. Leave a circle to join a new one.</span>
-          </div>
-        )}
       </div>
 
       {/* Joined Circles */}
@@ -151,18 +144,22 @@ export default function Circles() {
         <div className="space-y-3">
           {joinedCircles.map((circle) => {
             const c = colorConfig[circle.color];
+            const isGroup = !!circle.icon; // Groups have icons
             return (
               <div
                 key={circle._id}
-                className={`flex items-center gap-4 p-4 rounded-xl ${c.bg} border ${c.border} group hover:shadow-sm transition-all duration-200`}
+                className={`flex items-center gap-4 p-4 rounded-xl ${isGroup ? 'bg-white border-slate-200' : (c?.bg || 'bg-white') + ' border ' + (c?.border || 'border-slate-100')} group hover:shadow-sm transition-all duration-200`}
               >
-                <div className={`w-10 h-10 rounded-xl ${c.dot} flex items-center justify-center text-white font-bold text-sm flex-shrink-0`}>
-                  {circle.name[0]}
+                <div className={`w-10 h-10 rounded-xl ${circle.color?.includes('from-') ? 'bg-gradient-to-br ' + circle.color : (c?.dot || "bg-slate-400")} flex items-center justify-center text-white font-bold text-sm flex-shrink-0`}>
+                  {circle.icon || circle.name[0]}
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className={`font-bold text-sm ${c.text}`}>{circle.name}</p>
+                  <div className="flex items-center gap-2">
+                    <p className={`font-bold text-sm ${c?.text || "text-slate-800"}`}>{circle.name}</p>
+                    {circle.icon && <span className="text-xs">{circle.icon}</span>}
+                  </div>
                   <div className="flex flex-wrap items-center gap-3 mt-1 text-xs text-slate-500">
-                    <span className={`${c.badge} px-2 py-0.5 rounded-full font-medium`}>{circle.domain}</span>
+                    <span className={`${c?.badge || "bg-slate-100 text-slate-600"} px-2 py-0.5 rounded-full font-medium`}>{circle.domain}</span>
                     <span className="flex items-center gap-1"><MapPin size={10} />{circle.location}</span>
                     <span className="flex items-center gap-1"><Users size={10} />{circle.memberCount || circle.members?.length || 0} members</span>
                   </div>
@@ -178,7 +175,7 @@ export default function Circles() {
             );
           })}
           {joinedCircles.length === 0 && (
-            <p className="text-slate-400 text-sm text-center py-4">You haven't joined any circles yet.</p>
+            <p className="text-slate-400 text-sm text-center py-4">You haven&apos;t joined any circles yet.</p>
           )}
         </div>
       </div>
@@ -190,7 +187,7 @@ export default function Circles() {
           {availableCircles.map((circle) => {
             const c = colorConfig[circle.color];
             const canJoin = !user?.primaryDomain || isSimilarDomain(user.primaryDomain, circle);
-            const limitReached = joinedCircles.length >= MAX_CIRCLES;
+            const limitReached = false; // Limit removed
 
             return (
               <div

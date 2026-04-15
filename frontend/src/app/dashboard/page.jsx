@@ -7,6 +7,9 @@ import CircleList from "@/components/dashboard/CircleList";
 import ActivityFeed from "@/components/dashboard/ActivityFeed";
 import ProfileCard from "@/components/dashboard/ProfileCard";
 import WaysToEarn from "@/components/dashboard/WaysToEarn";
+import UpcomingMeetings from "@/components/dashboard/UpcomingMeetings";
+import NetworkingAnalytics from "@/components/dashboard/NetworkingAnalytics";
+import MeetingReminder from "@/components/dashboard/MeetingReminder";
 import { useProfile } from "@/lib/useProfile";
 import api from "@/lib/axios";
 
@@ -19,9 +22,12 @@ const DashboardPage = () => {
     const fetchSuggestions = async () => {
       try {
         const { data } = await api.get("/api/circles");
-        // Filter out circles the user is already in
-        const joinedIds = user?.circles?.map(c => c._id || c) || [];
-        const filtered = data.filter(c => !joinedIds.includes(c._id));
+        // Filter out circles/groups the user is already in
+        const joinedCircleIds = user?.circles?.map(c => c._id || c) || [];
+        const joinedGroupIds = user?.joinedGroups?.map(g => g._id || g) || [];
+        const allJoinedIds = [...joinedCircleIds, ...joinedGroupIds];
+        
+        const filtered = data.filter(c => !allJoinedIds.includes(c._id));
         setSuggestedCircles(filtered.slice(0, 3)); // Just take top 3 for dashboard
       } catch (err) {
         console.error("Failed to fetch suggested circles:", err);
@@ -33,11 +39,17 @@ const DashboardPage = () => {
     if (user) fetchSuggestions();
   }, [user]);
 
+  const myCircles = [
+    ...(user?.circles || []),
+    ...(user?.joinedGroups || [])
+  ];
+
   const firstName = user?.name ? user.name.split(" ")[0] : "User";
 
   return (
     <div className="flex flex-col lg:flex-row min-h-screen bg-[#F8FAFC]">
       <Sidebar />
+      <MeetingReminder />
       
       <main className="flex-1 p-6 lg:p-10 overflow-y-auto">
         <div className="max-w-6xl mx-auto">
@@ -47,19 +59,20 @@ const DashboardPage = () => {
               Welcome back, {profileLoading ? "..." : firstName} 👋
             </h1>
             <p className="text-slate-500 font-medium text-lg">
-              Here's what's happening in your circles today.
+              Here&apos;s what&apos;s happening in your circles today.
             </p>
           </div>
 
           <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
             {/* Left Column (Main Content) */}
             <div className="xl:col-span-2">
+              <NetworkingAnalytics />
               <Stats />
               
               <CircleList 
                 id="my-circles"
                 title="My Circles" 
-                circles={user?.circles || []} 
+                circles={myCircles} 
                 loading={profileLoading}
               />
               
@@ -68,7 +81,7 @@ const DashboardPage = () => {
                 title="Discover Circles" 
                 circles={suggestedCircles} 
                 loading={loadingSuggestions}
-                showLimitMessage={true}
+                showLimitMessage={false}
               />
 
               <WaysToEarn />
@@ -76,6 +89,7 @@ const DashboardPage = () => {
 
             {/* Right Column (Sidebar Content) */}
             <div className="space-y-8">
+              <UpcomingMeetings />
               <ProfileCard />
               <ActivityFeed />
               

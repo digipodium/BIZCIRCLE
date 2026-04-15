@@ -14,6 +14,7 @@ export const PointsProvider = ({ children }) => {
   // Sync with user's backend points whenever user data changes
   useEffect(() => {
     if (user && typeof user.points === 'number') {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setPoints(user.points);
     }
   }, [user]);

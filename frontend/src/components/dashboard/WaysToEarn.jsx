@@ -11,6 +11,7 @@ import {
   Send
 } from "lucide-react";
 import { usePoints } from "@/context/PointsContext";
+import api from "@/lib/axios";
 
 const EarnCard = ({ icon: Icon, title, points, action, completed }) => {
   const { earnPoints } = usePoints();
@@ -61,14 +62,25 @@ const WaysToEarn = () => {
   const [referring, setReferring] = useState(false);
   const { earnPoints } = usePoints();
 
-  const handleReferral = (e) => {
+  const handleReferral = async (e) => {
     e.preventDefault();
+    const email = e.target.elements[0].value;
     setReferring(true);
-    setTimeout(() => {
+    try {
+      await api.post("/api/referrals", { 
+        candidateEmail: email,
+        candidateName: email.split('@')[0], // Fallback name
+        message: "Referred via Dashboard quick link"
+      });
       earnPoints(30, "Refer a friend");
-      setReferring(false);
       e.target.reset();
-    }, 800);
+      alert("Referral sent successfully!");
+    } catch (err) {
+      console.error("Referral error:", err);
+      alert(err.response?.data?.message || "Failed to send referral");
+    } finally {
+      setReferring(false);
+    }
   };
 
   const tasks = [

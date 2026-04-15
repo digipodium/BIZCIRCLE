@@ -40,15 +40,42 @@ router.get('/feed', auth, async (req, res) => {
     }
 });
 
+// GET /api/my-meetings — upcoming meetings for all joined circles/groups
+router.get('/my-meetings', auth, async (req, res) => {
+    try {
+        const user = await require('../models/userModel').findById(req.user.id);
+        const joinedCircleIds = user.circles || [];
+        
+        const memberships = await GroupMember.find({ user: req.user.id, status: 'Approved' });
+        const joinedGroupIds = memberships.map(m => m.group);
+
+        const allJoinedIds = [...joinedCircleIds, ...joinedGroupIds];
+
+        const meetings = await Event.find({
+            targetId: { $in: allJoinedIds },
+            dateTime: { $gte: new Date() } // Future meetings only
+        })
+        .populate('targetId', 'name icon color')
+        .sort({ dateTime: 1 })
+        .limit(10);
+
+        res.json(meetings);
+    } catch (err) {
+        console.error('My meetings error:', err);
+        res.status(500).json({ error: err.message });
+    }
+});
+
 // ==========================
 // EVENTS (unchanged)
 // ==========================
 
 router.post('/events', auth, async (req, res) => {
     try {
-        const { group, title, description, dateTime, meetingLink } = req.body;
+        const { targetId, targetModel, title, description, dateTime, meetingLink } = req.body;
         const newEvent = await Event.create({ 
-            group, 
+            targetId, 
+            targetModel: targetModel || 'Group',
             title, 
             description, 
             dateTime, 
@@ -61,9 +88,9 @@ router.post('/events', auth, async (req, res) => {
     }
 });
 
-router.get('/events/:groupId', async (req, res) => {
+router.get('/events/:targetId', async (req, res) => {
     try {
-        const events = await Event.find({ group: req.params.groupId }).sort({ dateTime: 1 });
+        const events = await Event.find({ targetId: req.params.targetId }).sort({ dateTime: 1 });
         res.json(events);
     } catch (err) {
         res.status(500).json({ error: err.message });

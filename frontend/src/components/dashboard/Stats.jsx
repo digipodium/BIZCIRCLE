@@ -21,10 +21,12 @@ const StatCard = ({ icon: Icon, value, label, color }) => (
 const Stats = () => {
   const { user } = useProfile();
   
+  const totalJoined = (user?.circles?.length || 0) + (user?.joinedGroups?.length || 0);
+
   const stats = [
     { 
       label: "Circles Joined", 
-      value: `${user?.circles?.length || 0}/3`, 
+      value: `${totalJoined}`, 
       icon: Users, 
       color: "bg-blue-600" 
     },

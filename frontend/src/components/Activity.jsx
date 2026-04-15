@@ -10,7 +10,9 @@ const getIconData = (type) => {
   switch (type) {
     case "circle_joined": return { icon: GitBranch, iconBg: "bg-blue-100", iconColor: "text-blue-600", tag: "Circle", tagColor: "bg-blue-50 text-blue-600" };
     case "circle_left": return { icon: GitBranch, iconBg: "bg-slate-100", iconColor: "text-slate-600", tag: "Circle", tagColor: "bg-slate-50 text-slate-600" };
-    case "referral": return { icon: Award, iconBg: "bg-amber-100", iconColor: "text-amber-600", tag: "Referral", tagColor: "bg-amber-50 text-amber-600" };
+    case "referral": 
+    case "referral_sent": return { icon: Award, iconBg: "bg-amber-100", iconColor: "text-amber-600", tag: "Referral Sent", tagColor: "bg-amber-50 text-amber-600" };
+    case "referral_received": return { icon: Star, iconBg: "bg-purple-100", iconColor: "text-purple-600", tag: "Referral Received", tagColor: "bg-purple-50 text-purple-600" };
     case "connection": return { icon: UserPlus, iconBg: "bg-emerald-100", iconColor: "text-emerald-600", tag: "Connection", tagColor: "bg-emerald-50 text-emerald-600" };
     default: return { icon: FileText, iconBg: "bg-violet-100", iconColor: "text-violet-600", tag: "Activity", tagColor: "bg-violet-50 text-violet-600" };
   }
