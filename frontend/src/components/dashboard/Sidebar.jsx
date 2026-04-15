@@ -24,6 +24,7 @@ const Sidebar = () => {
     { name: "Dashboard", icon: LayoutDashboard, href: "/dashboard" },
     { name: "My Circles", icon: Users, href: "/dashboard/my-circles" },
     { name: "Discover", icon: Compass, href: "/dashboard/discover" },
+    { name: "Referrals", icon: Star, href: "/dashboard/referrals" },
     { name: "Profile", icon: UserCircle, href: "/profile" },
   ];
 

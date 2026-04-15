@@ -10,6 +10,7 @@ const GroupRouter = require('./routers/GroupRouter');
 const MessageRouter = require('./routers/MessageRouter');
 const ActivityRouter = require('./routers/ActivityRouter');
 const circleRouter = require("./routers/CircleRouter");
+const ReferralRouter = require("./routers/ReferralRouter");
 const app = express();
 const server = http.createServer(app);
 const io = new Server(server, { cors: { origin: '*' } });
@@ -27,6 +28,7 @@ app.use('/group', GroupRouter);
 app.use('/api/messages', MessageRouter);
 app.use('/api', ActivityRouter); // Events, Polls, Notifications
 app.use("/api/circles", circleRouter);
+app.use("/api/referrals", ReferralRouter);
 // Socket.io integration
 io.on('connection', (socket) => {
     console.log('User connected:', socket.id);

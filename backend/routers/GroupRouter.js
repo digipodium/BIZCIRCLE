@@ -2,7 +2,8 @@ const express = require('express');
 const router = express.Router();
 const Group = require('../models/groupModel');
 const GroupMember = require('../models/groupMemberModel');
-const Activity = require('../models/activityModel');  // NEW
+const Activity = require('../models/activityModel');
+const User = require('../models/userModel');
 const auth = require('../middleware/auth');
 
 // Create Group (unchanged)
@@ -140,11 +141,26 @@ router.post('/:id/join', auth, async (req, res) => {
         const group = await Group.findById(req.params.id);
         if (!group) return res.status(404).json({ message: 'Group not found' });
 
-        const existingMember = await GroupMember.findOne({
-            group: req.params.id,
-            user: req.user.id
-        });
+        const [existingMember, user] = await Promise.all([
+            GroupMember.findOne({ group: req.params.id, user: req.user.id }),
+            User.findById(req.user.id)
+        ]);
+
         if (existingMember) return res.status(400).json({ message: 'Already requested or joined' });
+
+        // Domain similarity check
+        if (user.primaryDomain) {
+            const userDomain = user.primaryDomain.toLowerCase();
+            const groupDomain = (group.domain || group.category || '').toLowerCase();
+            const isSimilar = groupDomain.includes(userDomain.split(' ')[0]) ||
+                             userDomain.includes(groupDomain.split(' ')[0]);
+            
+            if (!isSimilar && groupDomain !== 'general') {
+                return res.status(400).json({ 
+                    message: `"${group.name}" is in a different domain (${group.domain}). Circles/Groups must be in similar domains.` 
+                });
+            }
+        }
 
         const status = group.isPrivate ? 'Pending' : 'Approved';
         const member = await GroupMember.create({
@@ -156,14 +172,19 @@ router.post('/:id/join', auth, async (req, res) => {
 
         // Log activity only if directly approved (not pending approval)
         if (status === 'Approved') {
-            await Activity.create({
-                userId: req.user.id,
-                type: 'circle_joined',
-                targetId: group._id,
-                targetModel: 'Group',
-                description: `Joined group "${group.name}"`,
-                meta: new Map([['groupName', group.name], ['category', group.category || '']]),
-            });
+            await Promise.all([
+                User.findByIdAndUpdate(req.user.id, {
+                    $setOnInsert: { primaryDomain: group.domain || group.category }
+                }),
+                Activity.create({
+                    userId: req.user.id,
+                    type: 'circle_joined',
+                    targetId: group._id,
+                    targetModel: 'Group',
+                    description: `Joined group "${group.name}"`,
+                    meta: new Map([['groupName', group.name], ['category', group.category || '']]),
+                })
+            ]);
         }
 
         res.status(201).json(member);

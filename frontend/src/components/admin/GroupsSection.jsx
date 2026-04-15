@@ -1,5 +1,7 @@
 "use client";
 
+import Link from "next/link";
+
 const domainColors = {
   Technology: { bg: "#eff6ff", text: "#2563eb", border: "#bfdbfe" },
   Marketing: { bg: "#fdf4ff", text: "#9333ea", border: "#e9d5ff" },
@@ -135,7 +137,8 @@ function GroupCard({ group }) {
 
         {/* Actions */}
         <div style={{ display: "flex", gap: "10px" }}>
-          <button
+          <Link
+            href={`/dashboard/circles/${group.id}`}
             id={`manage-btn-${group.id}`}
             style={{
               flex: 1,
@@ -149,6 +152,8 @@ function GroupCard({ group }) {
               cursor: "pointer",
               transition: "all 0.2s",
               boxShadow: "0 2px 8px rgba(37,99,235,0.3)",
+              textAlign: "center",
+              textDecoration: "none",
             }}
             onMouseEnter={(e) => {
               e.currentTarget.style.background = "linear-gradient(135deg, #1d4ed8, #1e40af)";
@@ -160,8 +165,9 @@ function GroupCard({ group }) {
             }}
           >
             ⚙️ Manage
-          </button>
-          <button
+          </Link>
+          <Link
+            href={`/dashboard/circles/${group.id}`}
             id={`view-btn-${group.id}`}
             style={{
               flex: 1,
@@ -174,6 +180,8 @@ function GroupCard({ group }) {
               fontWeight: 600,
               cursor: "pointer",
               transition: "all 0.2s",
+              textAlign: "center",
+              textDecoration: "none",
             }}
             onMouseEnter={(e) => {
               e.currentTarget.style.background = "#eff6ff";
@@ -185,7 +193,7 @@ function GroupCard({ group }) {
             }}
           >
             👁 View
-          </button>
+          </Link>
         </div>
       </div>
     </div>

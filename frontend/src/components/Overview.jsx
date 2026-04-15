@@ -13,7 +13,10 @@ export default function Overview() {
   const { user, loading } = useProfile();
 
   const skills = user?.skills || [];
-  const circles = user?.circles || [];
+  const circles = [
+    ...(user?.circles || []),
+    ...(user?.joinedGroups || [])
+  ];
   const bio = user?.bio;
 
   return (

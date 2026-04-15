@@ -12,6 +12,8 @@ import { useProfile } from "@/lib/useProfile";
 import { usePoints } from "@/context/PointsContext";
 import { Star } from "lucide-react";
 
+import Link from "next/link";
+
 function NavAvatar() {
   const { user } = useProfile();
   const initials = user?.name
@@ -63,8 +65,8 @@ export default function ProfilePage() {
             <Star size={13} className="text-amber-500 fill-amber-500 group-hover:scale-110 transition-transform" />
             <span className="text-amber-700 font-bold text-xs">{points}</span>
           </div>
-          <span className="hidden sm:inline hover:text-blue-600 cursor-pointer transition-colors">Explore</span>
-          <span className="hidden sm:inline hover:text-blue-600 cursor-pointer transition-colors text-blue-600 font-medium border-b-2 border-blue-600 pb-0.5">Profile</span>
+          <Link href="/dashboard" className="hidden sm:inline hover:text-blue-600 cursor-pointer transition-colors">Explore</Link>
+          <Link href="/profile" className="hidden sm:inline hover:text-blue-600 cursor-pointer transition-colors text-blue-600 font-medium border-b-2 border-blue-600 pb-0.5">Profile</Link>
           <NavAvatar />
         </div>
       </nav>

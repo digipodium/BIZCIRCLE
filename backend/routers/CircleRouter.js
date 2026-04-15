@@ -68,12 +68,7 @@ router.post('/join', auth, async (req, res) => {
 
         if (!circle) return res.status(404).json({ error: 'Circle not found' });
 
-        // Rule 1: max 3 circles
-        if (user.circles.length >= 3) {
-            return res.status(400).json({
-                error: 'You can only join up to 3 circles in similar domains.'
-            });
-        }
+        // Rule 1: max 3 circles - REMOVED per user request
 
         // Rule 2: domain similarity check
         if (user.primaryDomain) {

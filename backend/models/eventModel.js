@@ -1,7 +1,8 @@
 const { Schema, model, Types } = require('../connection');
 
 const mySchema = new Schema({
-    group: { type: Types.ObjectId, ref: 'groups', required: true },
+    targetId: { type: Types.ObjectId, required: true, refPath: 'targetModel' },
+    targetModel: { type: String, required: true, enum: ['Group', 'Circle'] },
     title: { type: String, required: true },
     description: { type: String },
     dateTime: { type: Date, required: true },
@@ -13,4 +14,4 @@ const mySchema = new Schema({
     }]
 }, { timestamps: true });
 
-module.exports = model('events', mySchema);
+module.exports = model('Event', mySchema); // Changed from 'events' to 'Event' for consistency
