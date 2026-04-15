@@ -59,7 +59,7 @@ const DashboardPage = () => {
               Welcome back, {profileLoading ? "..." : firstName} 👋
             </h1>
             <p className="text-slate-500 font-medium text-lg">
-              Here's what's happening in your circles today.
+              Here&apos;s what&apos;s happening in your circles today.
             </p>
           </div>
 

@@ -1,4 +1,5 @@
 import React from 'react'
+import Link from 'next/link'
 
 const Navbar = () => {
   return (
@@ -6,7 +7,7 @@ const Navbar = () => {
   <div className="mx-auto max-w-screen-2xl px-4 md:px-8">
     <header className="flex items-center justify-between py-4 md:py-8">
       {/* logo - start */}
-      <a
+      <Link
         href="/"
         className="inline-flex items-center gap-2.5 text-2xl font-bold text-black md:text-3xl"
         aria-label="logo"
@@ -22,7 +23,7 @@ const Navbar = () => {
           <path d="M96 0V47L48 94H0V47L48 0H96Z" />
         </svg>
         Flowrift
-      </a>
+      </Link>
       {/* logo - end */}
       {/* nav - start */}
       <nav className="hidden gap-12 lg:flex">
