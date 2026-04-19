@@ -3,6 +3,7 @@
 import { useState, useCallback, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useProfile } from "@/lib/useProfile";
+import ProtectedRoute from "@/components/auth/ProtectedRoute";
 
 // ─────────────────────────────────────────────
 // ICONS (inline SVG to avoid any import issues)
@@ -1001,7 +1002,7 @@ function BackupSection({ settings, update, showToast }) {
 // ─────────────────────────────────────────────
 // MAIN COMPONENT
 // ─────────────────────────────────────────────
-export default function SystemConfig() {
+function SystemConfig() {
   const { user, loading: profileLoading } = useProfile();
   const router = useRouter();
 
@@ -1535,5 +1536,13 @@ export default function SystemConfig() {
         />
       )}
     </div>
+  );
+}
+
+export default function ProtectedSystemConfig() {
+  return (
+    <ProtectedRoute allowedRoles={["admin"]}>
+      <SystemConfig />
+    </ProtectedRoute>
   );
 }

@@ -2,17 +2,25 @@
 
 import { useState, useEffect } from "react";
 import api from "../../lib/axios";
-import AdminHeader from "./AdminHeader";
-import StatsSection from "./StatsSection";
-import GroupsSection from "./GroupsSection";
-import JoinRequestsSection from "./JoinRequestsSection";
-import ConstraintBanner from "./ConstraintBanner";
 import CreateGroupModal from "./CreateGroupModal";
+import AdminLayout from "./layout/AdminLayout";
+
+// Section Components
+import OverviewSection from "./sections/OverviewSection";
+import UserManagementSection from "./sections/UserManagementSection";
+import GroupManagementSection from "./sections/GroupManagementSection";
+import ContentModerationSection from "./sections/ContentModerationSection";
+import ReportsSection from "./sections/ReportsSection";
+import AnalyticsSection from "./sections/AnalyticsSection";
+import NotificationsSection from "./sections/NotificationsSection";
+import SystemSettingsSection from "./sections/SystemSettingsSection";
+import LogsSection from "./sections/LogsSection";
 
 export default function AdminDashboard() {
   const [groups, setGroups] = useState([]);
   const [requests, setRequests] = useState([]);
   const [showModal, setShowModal] = useState(false);
+  const [activeSection, setActiveSection] = useState("overview");
   const [toast, setToast] = useState(null);
   const [loading, setLoading] = useState(true);
 
@@ -96,14 +104,47 @@ export default function AdminDashboard() {
     }
   };
 
+  // Map activeSection to component
+  const renderSection = () => {
+    switch (activeSection) {
+      case "overview":
+        return <OverviewSection />;
+      case "users":
+        return <UserManagementSection />;
+      case "groups":
+        return (
+          <GroupManagementSection 
+            groups={groups} 
+            requests={requests} 
+            onAccept={handleAccept} 
+            onReject={handleReject} 
+          />
+        );
+      case "moderation":
+        return <ContentModerationSection />;
+      case "reports":
+        return <ReportsSection />;
+      case "analytics":
+        return <AnalyticsSection />;
+      case "notifications":
+        return <NotificationsSection />;
+      case "settings":
+        return <SystemSettingsSection />;
+      case "logs":
+        return <LogsSection />;
+      default:
+        return <OverviewSection />;
+    }
+  };
+
   return (
-    <div className="min-h-screen bg-gray-50 font-sans">
+    <AdminLayout activeSection={activeSection} setActiveSection={setActiveSection}>
       {/* Toast Notification */}
       {toast && (
         <div
           style={{
             position: "fixed",
-            top: "24px",
+            top: "80px",
             right: "24px",
             zIndex: 9999,
             display: "flex",
@@ -125,147 +166,16 @@ export default function AdminDashboard() {
         </div>
       )}
 
-      <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
-        * { font-family: 'Inter', sans-serif; }
-        @keyframes slideIn {
-          from { opacity: 0; transform: translateX(40px); }
-          to   { opacity: 1; transform: translateX(0); }
-        }
-        @keyframes fadeUp {
-          from { opacity: 0; transform: translateY(16px); }
-          to   { opacity: 1; transform: translateY(0); }
-        }
-        .fade-up { animation: fadeUp 0.4s ease forwards; }
-        .card-hover {
-          transition: transform 0.22s ease, box-shadow 0.22s ease;
-        }
-        .card-hover:hover {
-          transform: translateY(-4px) scale(1.012);
-          box-shadow: 0 20px 48px rgba(37,99,235,0.13);
-        }
-      `}</style>
-
-      {/* Top Nav Bar */}
-      <nav style={{
-        background: "white",
-        borderBottom: "1px solid #e5e7eb",
-        padding: "0 32px",
-        height: "64px",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "space-between",
-        position: "sticky",
-        top: 0,
-        zIndex: 100,
-        boxShadow: "0 1px 3px rgba(0,0,0,0.06)",
-      }}>
-        <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-          <div style={{
-            width: "36px",
-            height: "36px",
-            borderRadius: "10px",
-            background: "linear-gradient(135deg, #2563eb, #1d4ed8)",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            color: "white",
-            fontWeight: 800,
-            fontSize: "16px",
-          }}>B</div>
-          <span style={{ fontWeight: 800, fontSize: "20px", color: "#1e40af", letterSpacing: "-0.3px" }}>
-            BizCircle
-          </span>
-          <span style={{
-            marginLeft: "4px",
-            padding: "2px 10px",
-            background: "#eff6ff",
-            color: "#2563eb",
-            borderRadius: "20px",
-            fontSize: "11px",
-            fontWeight: 600,
-            border: "1px solid #bfdbfe",
-          }}>Admin</span>
+      {loading ? (
+        <div className="flex flex-col items-center justify-center min-h-[60vh] text-slate-400">
+          <div className="w-12 h-12 border-4 border-slate-200 border-t-blue-600 rounded-full animate-spin mb-4" />
+          <p className="font-bold">Syncing Platform Data...</p>
         </div>
-        <div style={{ display: "flex", alignItems: "center", gap: "20px" }}>
-          <button style={{
-            background: "none",
-            border: "none",
-            cursor: "pointer",
-            color: "#6b7280",
-            fontSize: "20px",
-            padding: "6px",
-            borderRadius: "8px",
-            transition: "background 0.2s",
-          }}>🔔</button>
-          <div style={{
-            width: "38px",
-            height: "38px",
-            borderRadius: "50%",
-            background: "linear-gradient(135deg, #2563eb, #7c3aed)",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            color: "white",
-            fontWeight: 700,
-            fontSize: "14px",
-            cursor: "pointer",
-          }}>SG</div>
+      ) : (
+        <div className="animate-in fade-in duration-700">
+          {renderSection()}
         </div>
-      </nav>
-
-      {/* Main Content */}
-      <main style={{ maxWidth: "1200px", margin: "0 auto", padding: "36px 24px" }}>
-        {loading ? (
-          <div style={{ textAlign: "center", padding: "100px", color: "#6b7280" }}>
-            <div style={{
-              width: "40px",
-              height: "40px",
-              border: "3px solid #e5e7eb",
-              borderTop: "3px solid #2563eb",
-              borderRadius: "50%",
-              animation: "spin 1s linear infinite",
-              margin: "0 auto 20px"
-            }} />
-            <p>Loading dashboard...</p>
-          </div>
-        ) : (
-          <>
-            <div className="fade-up">
-              <AdminHeader
-                groupCount={groups.length}
-                maxGroups={3}
-                onCreateGroup={() => setShowModal(true)}
-              />
-            </div>
-
-
-        <div className="fade-up" style={{ animationDelay: "0.1s" }}>
-          <StatsSection
-            totalGroups={groups.length}
-            totalMembers={totalMembers}
-            pendingRequests={requests.length}
-          />
-        </div>
-
-            <div className="fade-up" style={{ animationDelay: "0.2s" }}>
-              <ConstraintBanner />
-            </div>
-
-            <div className="fade-up" style={{ animationDelay: "0.25s" }}>
-              <GroupsSection groups={groups} />
-            </div>
-
-            <div className="fade-up" style={{ animationDelay: "0.3s" }}>
-              <JoinRequestsSection
-                requests={requests}
-                onAccept={handleAccept}
-                onReject={handleReject}
-              />
-            </div>
-          </>
-        )}
-      </main>
+      )}
 
       {/* Create Group Modal */}
       {showModal && (
@@ -275,6 +185,6 @@ export default function AdminDashboard() {
           onCreate={handleCreateGroup}
         />
       )}
-    </div>
+    </AdminLayout>
   );
 }

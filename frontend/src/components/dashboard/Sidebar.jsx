@@ -10,17 +10,20 @@ import {
   Menu,
   X,
   Star,
-  Bell
+  Bell,
+  Shield
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { usePoints } from "@/context/PointsContext";
+import { useProfile } from "@/lib/useProfile";
 import NotificationBell from "@/components/NotificationBell";
 
 const Sidebar = () => {
   const [isOpen, setIsOpen] = useState(false);
   const pathname = usePathname();
   const { points } = usePoints();
+  const { user } = useProfile();
 
   const menuItems = [
     { name: "Dashboard", icon: LayoutDashboard, href: "/dashboard" },
@@ -30,6 +33,11 @@ const Sidebar = () => {
     { name: "Profile", icon: UserCircle, href: "/profile" },
     { name: "Notifications", icon: Bell, href: "/notifications" },
   ];
+
+  // Add Admin link if user is admin
+  if (user?.role === "admin") {
+    menuItems.push({ name: "Admin", icon: Shield, href: "/admin" });
+  }
 
   const activeClass = "bg-blue-50 text-blue-600 font-semibold shadow-sm";
   const inactiveClass = "text-slate-600 hover:bg-slate-50 hover:text-blue-600 transition-all duration-200";
