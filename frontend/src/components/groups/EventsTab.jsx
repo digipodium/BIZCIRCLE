@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import api from '@/lib/axios';
 import { Calendar, Video, MapPin, Search, Plus, Edit3, Trash2 } from 'lucide-react';
 import CreateEventModal from './CreateEventModal';
@@ -10,7 +10,7 @@ export default function EventsTab({ targetId, targetModel = 'Group', members = [
   const [editingEvent, setEditingEvent] = useState(null);
   const [loading, setLoading] = useState(true);
   
-  const fetchEvents = async () => {
+  const fetchEvents = useCallback(async () => {
     try {
       const res = await api.get(`/api/events/${targetId}`);
       setEvents(res.data);
@@ -19,11 +19,11 @@ export default function EventsTab({ targetId, targetModel = 'Group', members = [
     } finally {
       setLoading(false);
     }
-  };
+  }, [targetId]);
 
   useEffect(() => {
     fetchEvents();
-  }, [targetId]);
+  }, [fetchEvents]);
 
   const handleCreated = (savedEvent) => {
     if (editingEvent) {

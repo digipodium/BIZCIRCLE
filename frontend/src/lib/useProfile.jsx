@@ -38,6 +38,12 @@ export function ProfileProvider({ children }) {
   };
 
   useEffect(() => {
+    // Only fetch profile if token exists
+    const token = localStorage.getItem("token");
+    if (!token) {
+      setLoading(false);
+      return;
+    }
     fetchProfile();
   }, []);
 

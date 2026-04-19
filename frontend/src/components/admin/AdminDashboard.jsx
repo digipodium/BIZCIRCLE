@@ -22,12 +22,20 @@ export default function AdminDashboard() {
 
   const fetchDashboardData = async () => {
     try {
+      const token = localStorage.getItem('token');
+      if (!token) {
+        console.warn('No token found when fetching dashboard data');
+        showToast("Session expired. Please log in again.", "error");
+        return;
+      }
+      
       const res = await api.get('/group/admin/dashboard');
       setGroups(res.data.groups);
       setRequests(res.data.requests);
     } catch (err) {
-      console.error(err);
-      showToast("Failed to load dashboard data", "error");
+      console.error('Dashboard fetch error:', err);
+      const errorMsg = err.response?.data?.message || err.message || "Failed to load dashboard data";
+      showToast(errorMsg, "error");
     } finally {
       setLoading(false);
     }
@@ -67,6 +75,12 @@ export default function AdminDashboard() {
 
   const handleCreateGroup = async (newGroup) => {
     try {
+      const token = localStorage.getItem('token');
+      if (!token) {
+        showToast("Session expired. Please log in again.", "error");
+        return;
+      }
+      
       await api.post('/group', {
         ...newGroup,
         isPrivate: true,
@@ -76,8 +90,9 @@ export default function AdminDashboard() {
       setShowModal(false);
       showToast(`"${newGroup.name}" has been created successfully!`, "success");
     } catch(err) {
-      console.error(err);
-      showToast("Failed to create group", "error");
+      console.error('Create group error:', err);
+      const errorMsg = err.response?.data?.message || err.message || "Failed to create group";
+      showToast(errorMsg, "error");
     }
   };
 

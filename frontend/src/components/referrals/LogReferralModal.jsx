@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { X, UserPlus, Mail, Briefcase, Globe, Send, Loader2 } from "lucide-react";
+import { X, UserPlus, Mail, Briefcase, Globe, Send, Loader2, Users } from "lucide-react";
 import api from "@/lib/axios";
 import { usePoints } from "@/context/PointsContext";
 import { useProfile } from "@/lib/useProfile";
@@ -20,12 +20,61 @@ export default function LogReferralModal({ isOpen, onClose, onSuccess }) {
   });
 
   const [availableCircles, setAvailableCircles] = useState([]);
+  const [circlesLoading, setCirclesLoading] = useState(false);
+  const [users, setUsers] = useState([]);
 
   useEffect(() => {
     if (isOpen) {
-      setAvailableCircles(user?.circles || []);
+      // Default: show current user's own circles when no receiver selected
+      const defaultCircles = [
+        ...(user?.circles || []),
+        ...(user?.joinedGroups || []),
+      ];
+      setAvailableCircles(defaultCircles);
+
+      api.get("/user/all")
+        .then(res => setUsers(res.data))
+        .catch(err => console.error("Failed to fetch users:", err));
     }
   }, [isOpen, user]);
+
+  useEffect(() => {
+    if (!formData.receiverId) {
+      const defaultCircles = [
+        ...(user?.circles || []),
+        ...(user?.joinedGroups || []),
+      ];
+      setAvailableCircles(defaultCircles);
+      setFormData(prev => ({ ...prev, targetCircle: "" }));
+      return;
+    }
+
+    // Fetch mutual Circles + mutual Groups in parallel
+    setCirclesLoading(true);
+    setAvailableCircles([]);
+    setFormData(prev => ({ ...prev, targetCircle: "" }));
+
+    Promise.all([
+      api.get(`/api/circles/mutual/${formData.receiverId}`).catch(() => ({ data: [] })),
+      api.get(`/group/mutual/${formData.receiverId}`).catch(() => ({ data: [] })),
+    ]).then(([circlesRes, groupsRes]) => {
+      const allMutual = [
+        ...(circlesRes.data || []),
+        ...(groupsRes.data || []),
+      ];
+      
+      if (allMutual.length > 0) {
+        setAvailableCircles(allMutual);
+      } else {
+        // Fallback to user's own circles if no mutuals found
+        const myCircles = [
+          ...(user?.circles || []),
+          ...(user?.joinedGroups || []),
+        ];
+        setAvailableCircles(myCircles);
+      }
+    }).finally(() => setCirclesLoading(false));
+  }, [formData.receiverId, user]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -67,6 +116,26 @@ export default function LogReferralModal({ isOpen, onClose, onSuccess }) {
         </div>
 
         <form onSubmit={handleSubmit} className="p-6 space-y-4 max-h-[70vh] overflow-y-auto">
+          {/* Receiver / Connection */}
+          <div className="space-y-1.5 border-b border-slate-100 pb-4 mb-4">
+            <label className="text-xs font-bold text-slate-500 ml-1 uppercase tracking-wider flex items-center gap-1.5">
+              <Users size={12} className="text-blue-500" /> Connection / Receiver
+            </label>
+            <select
+              className="w-full bg-slate-50 border border-slate-100 rounded-xl px-4 py-3 text-sm focus:bg-white focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 transition-all outline-none appearance-none"
+              value={formData.receiverId}
+              onChange={(e) => setFormData({...formData, receiverId: e.target.value})}
+              required
+            >
+              <option value="">Choose a connection you met with...</option>
+              {users.map(u => (
+                <option key={u._id} value={u._id}>
+                  {u.name} {u.headline ? `- ${u.headline}` : ''}
+                </option>
+              ))}
+            </select>
+          </div>
+
           {/* Candidate Info */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="space-y-1.5">
@@ -115,15 +184,26 @@ export default function LogReferralModal({ isOpen, onClose, onSuccess }) {
                 <Globe size={12} className="text-blue-500" /> Target Circle
               </label>
               <select
-                className="w-full bg-slate-50 border border-slate-100 rounded-xl px-4 py-3 text-sm focus:bg-white focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 transition-all outline-none appearance-none"
+                className="w-full bg-slate-50 border border-slate-100 rounded-xl px-4 py-3 text-sm focus:bg-white focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 transition-all outline-none appearance-none disabled:opacity-60 disabled:cursor-not-allowed"
                 value={formData.targetCircle}
                 onChange={(e) => setFormData({...formData, targetCircle: e.target.value})}
                 required
+                disabled={circlesLoading}
               >
-                <option value="">Select Circle...</option>
-                {availableCircles.map(c => (
-                  <option key={c._id} value={c._id}>{c.name}</option>
-                ))}
+                {circlesLoading ? (
+                  <option value="">Loading mutual circles...</option>
+                ) : availableCircles.length === 0 && formData.receiverId ? (
+                  <option value="">No mutual circles found</option>
+                ) : (
+                  <>
+                    <option value="">Select Circle...</option>
+                    {availableCircles.map(c => (
+                      <option key={c._id} value={c._id}>
+                        {c.name}{c.domain ? ` · ${c.domain}` : ""}
+                      </option>
+                    ))}
+                  </>
+                )}
               </select>
             </div>
           </div>

@@ -9,7 +9,7 @@ const referralSchema = new mongoose.Schema({
     receiver: { 
         type: mongoose.Schema.Types.ObjectId, 
         ref: 'User' 
-    }, // Optional internal recipient
+    },
     candidateName: { 
         type: String, 
         required: true 
@@ -30,9 +30,13 @@ const referralSchema = new mongoose.Schema({
     },
     status: { 
         type: String, 
-        enum: ['Pending', 'Successful', 'Rejected'], 
+        enum: ['Pending', 'Verified', 'Successful', 'Rejected', 'Expired'], 
         default: 'Pending' 
-    }
+    },
+    // Verification fields
+    verificationToken: { type: String },
+    verificationTokenExpiry: { type: Date },
+    verifiedAt: { type: Date },
 }, { timestamps: true });
 
 module.exports = mongoose.model("Referral", referralSchema);

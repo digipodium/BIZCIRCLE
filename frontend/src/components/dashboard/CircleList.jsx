@@ -5,7 +5,7 @@ import { Users, MapPin, ChevronRight, Plus, Loader2 } from "lucide-react";
 import Link from "next/link";
 import api from "@/lib/axios";
 
-const CircleCard = ({ _id, name, domain, location, members, isJoined, icon, color, description, memberCount }) => {
+const CircleCard = ({ _id, name, domain, location, members, isJoined, icon, color, description, memberCount, type }) => {
   const { earnPoints } = usePoints();
   const { fetchProfile } = useProfile();
   const [joined, setJoined] = useState(isJoined);
@@ -16,13 +16,16 @@ const CircleCard = ({ _id, name, domain, location, members, isJoined, icon, colo
     
     setIsJoining(true);
     try {
-      await api.post("/api/circles/join", { circleId: _id });
+      const endpoint = type === 'group' ? `/api/groups/${_id}/join` : "/api/circles/join";
+      const payload = type === 'group' ? {} : { circleId: _id };
+      
+      await api.post(endpoint, payload);
       setJoined(true);
       earnPoints(10, `Joining ${name}`);
       await fetchProfile(); // Refresh global user stats
     } catch (err) {
-      console.error("Failed to join circle:", err);
-      alert(err.response?.data?.error || "Failed to join circle");
+      console.error("Failed to join community:", err);
+      alert(err.response?.data?.error || err.response?.data?.message || "Failed to join community");
     } finally {
       setIsJoining(false);
     }
