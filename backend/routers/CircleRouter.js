@@ -5,15 +5,46 @@ const User = require('../models/userModel');
 const Activity = require('../models/activityModel');
 const auth = require('../middleware/auth');
 
-// GET all circles (with optional domain filter)
+// GET all circles (with optional domain and search filters)
 router.get('/', async (req, res) => {
     try {
-        const { domain } = req.query;
-        const query = domain
-            ? { $or: [{ domain }, { relatedDomains: domain }] }
-            : {};
+        const { domain, search } = req.query;
+        let query = {};
+
+        if (domain) {
+            query = { $or: [{ domain }, { relatedDomains: domain }] };
+        }
+
+        if (search) {
+            query.name = { $regex: search, $options: 'i' };
+        }
+
         const circles = await Circle.find(query).select('name domain location memberCount description relatedDomains');
+
         res.json(circles);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// GET mutual circles between current user and another user
+router.get('/mutual/:otherUserId', auth, async (req, res) => {
+    try {
+        const [me, other] = await Promise.all([
+            User.findById(req.user.id).select('circles'),
+            User.findById(req.params.otherUserId).select('circles'),
+        ]);
+
+        if (!other) return res.status(404).json({ error: 'User not found' });
+
+        const myCircleIds = (me.circles || []).map(id => id.toString());
+        const otherCircleIds = (other.circles || []).map(id => id.toString());
+        const mutualIds = myCircleIds.filter(id => otherCircleIds.includes(id));
+
+        const mutualCircles = await Circle.find({ _id: { $in: mutualIds } })
+            .select('name domain location memberCount');
+
+        res.json(mutualCircles);
     } catch (err) {
         res.status(500).json({ error: err.message });
     }
@@ -68,12 +99,7 @@ router.post('/join', auth, async (req, res) => {
 
         if (!circle) return res.status(404).json({ error: 'Circle not found' });
 
-        // Rule 1: max 3 circles
-        if (user.circles.length >= 3) {
-            return res.status(400).json({
-                error: 'You can only join up to 3 circles in similar domains.'
-            });
-        }
+        // Rule 1: max 3 circles - REMOVED per user request
 
         // Rule 2: domain similarity check
         if (user.primaryDomain) {

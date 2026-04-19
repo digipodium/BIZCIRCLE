@@ -1,29 +1,29 @@
 "use client";
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import api from '@/lib/axios';
 import { Calendar, Video, MapPin, Search, Plus, Edit3, Trash2 } from 'lucide-react';
 import CreateEventModal from './CreateEventModal';
 
-export default function EventsTab({ groupId, members = [] }) {
+export default function EventsTab({ targetId, targetModel = 'Group', members = [] }) {
   const [events, setEvents] = useState([]);
   const [showModal, setShowModal] = useState(false);
   const [editingEvent, setEditingEvent] = useState(null);
   const [loading, setLoading] = useState(true);
   
-  const fetchEvents = async () => {
+  const fetchEvents = useCallback(async () => {
     try {
-      const res = await api.get(`/api/events/${groupId}`);
+      const res = await api.get(`/api/events/${targetId}`);
       setEvents(res.data);
     } catch (err) {
       console.error(err);
     } finally {
       setLoading(false);
     }
-  };
+  }, [targetId]);
 
   useEffect(() => {
     fetchEvents();
-  }, [groupId]);
+  }, [fetchEvents]);
 
   const handleCreated = (savedEvent) => {
     if (editingEvent) {
@@ -180,7 +180,8 @@ export default function EventsTab({ groupId, members = [] }) {
 
       {showModal && (
         <CreateEventModal 
-          groupId={groupId} 
+          targetId={targetId} 
+          targetModel={targetModel}
           event={editingEvent}
           onClose={() => {
             setShowModal(false);

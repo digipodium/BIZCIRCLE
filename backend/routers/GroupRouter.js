@@ -3,6 +3,7 @@ const router = express.Router();
 const Group = require('../models/groupModel');
 const GroupMember = require('../models/groupMemberModel');
 const Activity = require('../models/activityModel');
+const User = require('../models/userModel');
 const auth = require('../middleware/auth');
 const { createNotification } = require('../controllers/notificationController');
 
@@ -32,10 +33,15 @@ router.post('/', auth, async (req, res) => {
     }
 });
 
-// Get All Groups (unchanged)
+// Get All Groups (with search support)
 router.get('/', async (req, res) => {
     try {
-        const groups = await Group.find().populate('createdBy', 'name email');
+        const { search } = req.query;
+        let query = {};
+        if (search) {
+            query.name = { $regex: search, $options: 'i' };
+        }
+        const groups = await Group.find(query).populate('createdBy', 'name email');
         res.json(groups);
     } catch (err) {
         res.status(500).json({ error: err.message });
@@ -118,6 +124,24 @@ router.get('/my', auth, async (req, res) => {
     }
 });
 
+// Get Mutual Groups with another user
+router.get('/mutual/:otherUserId', auth, async (req, res) => {
+    try {
+        const myMemberships = await GroupMember.find({ user: req.user.id, status: 'Approved' });
+        const otherMemberships = await GroupMember.find({ user: req.params.otherUserId, status: 'Approved' });
+        
+        const myGroupIds = myMemberships.map(m => m.group.toString());
+        const otherGroupIds = otherMemberships.map(m => m.group.toString());
+        
+        const mutualGroupIds = myGroupIds.filter(id => otherGroupIds.includes(id));
+        const mutualGroups = await Group.find({ _id: { $in: mutualGroupIds } }).populate('createdBy', 'name email');
+        
+        res.json(mutualGroups);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
 // Get Group By ID (unchanged)
 router.get('/:id', async (req, res) => {
     try {
@@ -141,11 +165,26 @@ router.post('/:id/join', auth, async (req, res) => {
         const group = await Group.findById(req.params.id);
         if (!group) return res.status(404).json({ message: 'Group not found' });
 
-        const existingMember = await GroupMember.findOne({
-            group: req.params.id,
-            user: req.user.id
-        });
+        const [existingMember, user] = await Promise.all([
+            GroupMember.findOne({ group: req.params.id, user: req.user.id }),
+            User.findById(req.user.id)
+        ]);
+
         if (existingMember) return res.status(400).json({ message: 'Already requested or joined' });
+
+        // Domain similarity check
+        if (user.primaryDomain) {
+            const userDomain = user.primaryDomain.toLowerCase();
+            const groupDomain = (group.domain || group.category || '').toLowerCase();
+            const isSimilar = groupDomain.includes(userDomain.split(' ')[0]) ||
+                             userDomain.includes(groupDomain.split(' ')[0]);
+            
+            if (!isSimilar && groupDomain !== 'general') {
+                return res.status(400).json({ 
+                    message: `"${group.name}" is in a different domain (${group.domain}). Circles/Groups must be in similar domains.` 
+                });
+            }
+        }
 
         const status = group.isPrivate ? 'Pending' : 'Approved';
         const member = await GroupMember.create({
@@ -157,14 +196,19 @@ router.post('/:id/join', auth, async (req, res) => {
 
         // Log activity only if directly approved (not pending approval)
         if (status === 'Approved') {
-            await Activity.create({
-                userId: req.user.id,
-                type: 'circle_joined',
-                targetId: group._id,
-                targetModel: 'Group',
-                description: `Joined group "${group.name}"`,
-                meta: new Map([['groupName', group.name], ['category', group.category || '']]),
-            });
+            await Promise.all([
+                User.findByIdAndUpdate(req.user.id, {
+                    $setOnInsert: { primaryDomain: group.domain || group.category }
+                }),
+                Activity.create({
+                    userId: req.user.id,
+                    type: 'circle_joined',
+                    targetId: group._id,
+                    targetModel: 'Group',
+                    description: `Joined group "${group.name}"`,
+                    meta: new Map([['groupName', group.name], ['category', group.category || '']]),
+                })
+            ]);
         }
 
         res.status(201).json(member);

@@ -3,7 +3,7 @@ import { useState } from "react";
 import api from "@/lib/axios";
 import { X, Calendar, Clock, AlignLeft, Video } from "lucide-react";
 
-export default function CreateEventModal({ groupId, onClose, onCreated, event = null }) {
+export default function CreateEventModal({ targetId, targetModel = 'Group', onClose, onCreated, event = null }) {
   const [form, setForm] = useState({
     title: event?.title || "",
     description: event?.description || "",
@@ -30,7 +30,8 @@ export default function CreateEventModal({ groupId, onClose, onCreated, event = 
         // Create mode
         res = await api.post("/api/events", {
           ...form,
-          group: groupId,
+          targetId,
+          targetModel
         });
       }
       onCreated(res.data);

@@ -1,11 +1,11 @@
 "use client";
 
-import React, { useState, useEffect, useRef, useCallback, Suspense } from "react";
-import { useSearchParams, useRouter } from "next/navigation";
+import React, { useState, useEffect, useRef, Suspense } from "react";
+import { useSearchParams } from "next/navigation";
 import Sidebar from "@/components/dashboard/Sidebar";
 import api from "@/lib/axios";
 import {
-  Search, X, User, Users, UserPlus, Loader2, Compass, ArrowRight,
+  Search, X, User, Users, UserPlus, Loader2, Compass
 } from "lucide-react";
 import Link from "next/link";
 import { useProfile } from "@/lib/useProfile";
@@ -68,7 +68,6 @@ function SkeletonCard() {
 ───────────────────────────────────────────────────────────────────────────── */
 function UserCard({ user, query = "" }) {
   const [status, setStatus] = useState("idle");
-
   const { fetchProfile } = useProfile();
 
   const handleConnect = async () => {
@@ -86,7 +85,6 @@ function UserCard({ user, query = "" }) {
 
   return (
     <div className="bg-white border border-slate-100 rounded-2xl p-5 shadow-sm hover:shadow-md hover:border-blue-100 transition-all duration-200 flex flex-col gap-4 group">
-      {/* Top row */}
       <Link href={`/user/${user._id}`} className="flex items-start gap-4 cursor-pointer">
         <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-blue-500 to-blue-700 flex items-center justify-center text-white font-bold text-base shadow-md shadow-blue-100 shrink-0 group-hover:scale-105 transition-transform">
           {initials}
@@ -106,7 +104,6 @@ function UserCard({ user, query = "" }) {
         </div>
       </Link>
 
-      {/* Skills */}
       {user.skills?.length > 0 && (
         <div className="flex flex-wrap gap-1.5">
           {user.skills.slice(0, 4).map(s => (
@@ -117,7 +114,6 @@ function UserCard({ user, query = "" }) {
         </div>
       )}
 
-      {/* Connect */}
       <button
         onClick={handleConnect}
         disabled={status !== "idle"}
@@ -149,7 +145,6 @@ function GroupCard({ group, query = "" }) {
 
   return (
     <div className="bg-white border border-slate-100 rounded-2xl p-5 shadow-sm hover:shadow-md hover:border-blue-100 transition-all duration-200 flex flex-col gap-4 group">
-      {/* Top row */}
       <div className="flex items-start gap-4">
         <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-blue-100 to-blue-200 flex items-center justify-center text-2xl shrink-0 group-hover:scale-105 transition-transform">
           {group.icon || "💼"}
@@ -172,7 +167,6 @@ function GroupCard({ group, query = "" }) {
         </p>
       )}
 
-      {/* Join */}
       <button
         onClick={handleJoin}
         disabled={status !== "idle"}
@@ -227,29 +221,20 @@ function EmptyState({ query }) {
 }
 
 /* ─────────────────────────────────────────────────────────────────────────────
-   MAIN CONTENT  (uses useSearchParams, so wrapped in Suspense by parent)
+   MAIN CONTENT
 ───────────────────────────────────────────────────────────────────────────── */
 function ExploreContent() {
   const searchParams = useSearchParams();
-  const router = useRouter();
-
-  // ── State ────────────────────────────────────────────────────────────────
   const [query, setQuery] = useState(searchParams.get("q") || "");
   const [activeTab, setActiveTab] = useState("all");
-
-  // Search results
   const [searchResults, setSearchResults] = useState({ users: [], groups: [] });
   const [searching, setSearching] = useState(false);
-
-  // Discovery
   const [discoverUsers, setDiscoverUsers] = useState([]);
   const [discoverGroups, setDiscoverGroups] = useState([]);
   const [loadingDiscover, setLoadingDiscover] = useState(true);
-
   const inputRef = useRef(null);
   const debouncedQuery = useDebounce(query, 350);
 
-  // ── Load discovery suggestions on mount ──────────────────────────────────
   useEffect(() => {
     Promise.all([
       api.get("/api/discover/users").catch(() => ({ data: [] })),
@@ -260,7 +245,6 @@ function ExploreContent() {
     }).finally(() => setLoadingDiscover(false));
   }, []);
 
-  // ── Search whenever debounced query changes ───────────────────────────────
   useEffect(() => {
     if (!debouncedQuery.trim()) {
       setSearchResults({ users: [], groups: [] });
@@ -277,12 +261,9 @@ function ExploreContent() {
     run();
   }, [debouncedQuery]);
 
-  // ── Handlers ─────────────────────────────────────────────────────────────
   const clearQuery = () => { setQuery(""); inputRef.current?.focus(); };
-
   const isSearching = !!query.trim();
-  const isEmpty = isSearching && !searching
-    && searchResults.users.length === 0 && searchResults.groups.length === 0;
+  const isEmpty = isSearching && !searching && searchResults.users.length === 0 && searchResults.groups.length === 0;
 
   const tabs = [
     { id: "all",    label: "All",    count: searchResults.users.length + searchResults.groups.length },
@@ -292,15 +273,11 @@ function ExploreContent() {
   const showPeople = !isSearching || activeTab === "all" || activeTab === "people";
   const showGroups = !isSearching || activeTab === "all" || activeTab === "groups";
 
-  /* ── Render ────────────────────────────────────────────────────────────── */
   return (
     <div className="flex flex-col lg:flex-row min-h-screen bg-[#F8FAFC]">
       <Sidebar />
-
       <main className="flex-1 p-6 lg:p-10 overflow-y-auto">
         <div className="max-w-5xl mx-auto">
-
-          {/* ── Page Header ─────────────────────────────────────────── */}
           <div className="mb-8 mt-12 lg:mt-0">
             <div className="flex items-center gap-3 mb-1">
               <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-blue-600 to-blue-400 flex items-center justify-center shadow-md shadow-blue-200">
@@ -313,7 +290,6 @@ function ExploreContent() {
             </p>
           </div>
 
-          {/* ── Search Bar ──────────────────────────────────────────── */}
           <div className="relative mb-8">
             <div className="flex items-center gap-3 bg-white border border-slate-200 rounded-2xl px-5 py-4 shadow-sm focus-within:border-blue-400 focus-within:shadow-md focus-within:shadow-blue-50 transition-all duration-200">
               {searching
@@ -335,8 +311,6 @@ function ExploreContent() {
                 </button>
               )}
             </div>
-
-            {/* Subtle hint below search */}
             {!isSearching && (
               <p className="text-center text-xs text-slate-400 mt-3">
                 Type a name, skill (e.g. <span className="font-medium text-slate-500">React</span>) or group topic to search
@@ -344,12 +318,8 @@ function ExploreContent() {
             )}
           </div>
 
-          {/* ═══════════════════════════════════════════════════════════
-              SEARCH RESULTS MODE
-          ═══════════════════════════════════════════════════════════ */}
           {isSearching && (
             <>
-              {/* Tabs */}
               <div className="flex items-center gap-2 mb-6 border-b border-slate-100 pb-px">
                 {tabs.map(t => (
                   <button
@@ -379,17 +349,14 @@ function ExploreContent() {
                 </p>
               )}
 
-              {/* Loading skeletons */}
               {searching && (
                 <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
                   {Array.from({ length: 6 }).map((_, i) => <SkeletonCard key={i} />)}
                 </div>
               )}
 
-              {/* Empty state */}
               {isEmpty && <EmptyState query={query} />}
 
-              {/* People results */}
               {!searching && showPeople && searchResults.users.length > 0 && (
                 <section className="mb-10">
                   <SectionHeader
@@ -405,7 +372,6 @@ function ExploreContent() {
                 </section>
               )}
 
-              {/* Group results */}
               {!searching && showGroups && searchResults.groups.length > 0 && (
                 <section>
                   <SectionHeader
@@ -423,18 +389,13 @@ function ExploreContent() {
             </>
           )}
 
-          {/* ═══════════════════════════════════════════════════════════
-              DISCOVERY MODE  (shown when no query)
-          ═══════════════════════════════════════════════════════════ */}
           {!isSearching && (
             <>
-              {/* ── People You May Know ─────────────────────────────── */}
               <section className="mb-12">
                 <SectionHeader
                   icon={<UserPlus size={15} className="text-blue-500" />}
                   title="People You May Know"
                 />
-
                 {loadingDiscover ? (
                   <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
                     {Array.from({ length: 6 }).map((_, i) => <SkeletonCard key={i} />)}
@@ -452,20 +413,17 @@ function ExploreContent() {
                 )}
               </section>
 
-              {/* ── Divider ─────────────────────────────────────────── */}
               <div className="flex items-center gap-4 mb-10">
                 <div className="h-px flex-1 bg-slate-100" />
                 <span className="text-[11px] font-bold text-slate-400 uppercase tracking-widest">Groups</span>
                 <div className="h-px flex-1 bg-slate-100" />
               </div>
 
-              {/* ── Suggested Groups ─────────────────────────────────── */}
               <section>
                 <SectionHeader
                   icon={<Users size={15} className="text-blue-500" />}
                   title="Suggested Groups"
                 />
-
                 {loadingDiscover ? (
                   <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
                     {Array.from({ length: 6 }).map((_, i) => <SkeletonCard key={i} />)}
@@ -484,8 +442,6 @@ function ExploreContent() {
               </section>
             </>
           )}
-
-          {/* bottom padding */}
           <div className="h-12" />
         </div>
       </main>
@@ -493,9 +449,6 @@ function ExploreContent() {
   );
 }
 
-/* ─────────────────────────────────────────────────────────────────────────────
-   PAGE EXPORT — wraps in Suspense for useSearchParams
-───────────────────────────────────────────────────────────────────────────── */
 export default function ExplorePage() {
   return (
     <Suspense fallback={

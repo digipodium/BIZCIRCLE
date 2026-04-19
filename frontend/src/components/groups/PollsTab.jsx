@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import api from '@/lib/axios';
 import { BarChart2, Plus, CheckCircle2, TrendingUp } from 'lucide-react';
 import CreatePollModal from './CreatePollModal';
@@ -9,7 +9,7 @@ export default function PollsTab({ groupId }) {
   const [showModal, setShowModal] = useState(false);
   const [loading, setLoading] = useState(true);
   
-  const fetchPolls = async () => {
+  const fetchPolls = useCallback(async () => {
     try {
       const res = await api.get(`/api/polls/${groupId}`);
       setPolls(res.data);
@@ -18,11 +18,11 @@ export default function PollsTab({ groupId }) {
     } finally {
       setLoading(false);
     }
-  };
+  }, [groupId]);
 
   useEffect(() => {
     fetchPolls();
-  }, [groupId]);
+  }, [fetchPolls]);
 
   const handleCreated = (newPoll) => {
     setPolls(prev => [newPoll, ...prev]);

@@ -15,6 +15,8 @@ import { usePoints } from "@/context/PointsContext";
 import { Star } from "lucide-react";
 import NotificationBell from "@/components/NotificationBell";
 
+import Link from "next/link";
+
 function NavAvatar() {
   const { user } = useProfile();
   const initials = user?.name

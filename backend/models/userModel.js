@@ -4,7 +4,8 @@ const mongoose = require("mongoose");
 const userSchema = new mongoose.Schema({
   name: String,
   email: { type: String, unique: true },
-  password: String,
+  password: { type: String, required: false }, // Optional for Google Auth users
+  googleId: { type: String, unique: true, sparse: true }, // Sparse allows multiple nulls
   bio: String,
   skills: [{ type: String }],
   role: String,

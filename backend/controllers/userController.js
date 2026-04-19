@@ -1,7 +1,13 @@
 const User = require('../models/userModel');
+const GroupMember = require('../models/groupMemberModel');
+const Group = require('../models/groupModel');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const { createNotification } = require('./notificationController');
+const { OAuth2Client } = require('google-auth-library');
+
+const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
+
 
 const JWT_SECRET = process.env.JWT_SECRET || 'mytopseret';
 
@@ -83,6 +89,59 @@ const login = async (req, res) => {
   }
 };
 
+// POST /user/google-login
+const googleLogin = async (req, res) => {
+  try {
+    const { idToken } = req.body;
+    if (!idToken) {
+      return res.status(400).json({ message: 'ID Token is required' });
+    }
+
+    const ticket = await client.verifyIdToken({
+      idToken,
+      audience: process.env.GOOGLE_CLIENT_ID,
+    });
+    const payload = ticket.getPayload();
+    const { sub: googleId, email, name, picture } = payload;
+
+    let user = await User.findOne({ $or: [{ googleId }, { email }] });
+
+    if (!user) {
+      // Create new user
+      user = await User.create({
+        name,
+        email,
+        googleId,
+        profilePicture: picture,
+        role: 'Professional',
+        points: 50,
+      });
+    } else if (!user.googleId) {
+      // Link Google ID to existing email account
+      user.googleId = googleId;
+      if (!user.profilePicture) user.profilePicture = picture;
+      await user.save();
+    }
+
+    const token = jwt.sign({ id: user._id, role: user.role }, JWT_SECRET, { expiresIn: '7d' });
+
+    res.json({
+      token,
+      user: {
+        id: user._id,
+        name: user.name,
+        email: user.email,
+        role: user.role,
+        profilePicture: user.profilePicture,
+      },
+    });
+  } catch (err) {
+    console.error('Google login error:', err);
+    res.status(401).json({ message: 'Invalid Google token' });
+  }
+};
+
+
 // GET /user/profile  (requires auth middleware)
 const getUserProfile = async (req, res) => {
   try {
@@ -94,7 +153,15 @@ const getUserProfile = async (req, res) => {
       return res.status(404).json({ message: 'User not found' });
     }
 
-    res.json(user);
+    // Fetch joined groups from the GroupMember system
+    const memberships = await GroupMember.find({ user: req.user.id, status: 'Approved' })
+      .populate('group', 'name domain location description icon color');
+
+    const joinedGroups = memberships
+      .map(m => m.group)
+      .filter(g => g !== null);
+
+    res.json({ ...user.toObject(), joinedGroups });
   } catch (err) {
     console.error('Get profile error:', err);
     res.status(500).json({ message: 'Server error' });
@@ -122,13 +189,21 @@ const updateUserProfile = async (req, res) => {
       { $set: updates },
       { new: true, runValidators: true }
     ).select('-password')
-     .populate('circles', 'name domain location members');
+      .populate('circles', 'name domain location members');
 
     if (!user) {
       return res.status(404).json({ message: 'User not found' });
     }
 
-    res.json(user);
+    // Fetch joined groups from the GroupMember system
+    const memberships = await GroupMember.find({ user: req.user.id, status: 'Approved' })
+      .populate('group', 'name domain location description icon color');
+
+    const joinedGroups = memberships
+      .map(m => m.group)
+      .filter(g => g !== null);
+
+    res.json({ ...user.toObject(), joinedGroups });
   } catch (err) {
     console.error('Update profile error:', err);
     res.status(500).json({ message: err.message || 'Server error' });
@@ -139,7 +214,7 @@ const updateUserProfile = async (req, res) => {
 const updatePoints = async (req, res) => {
   try {
     const { amount } = req.body;
-    
+
     if (amount === undefined) {
       return res.status(400).json({ message: 'Amount is required' });
     }
