@@ -1,170 +1,123 @@
 const Notification = require('../models/notificationModel');
 
-// ══════════════════════════════════════════════════════════════
-// HELPER: create a notification and optionally push via Socket.io
-// ══════════════════════════════════════════════════════════════
+// Helper to create notification and emit real-time event
+const createNotification = async (io, { userId, type, category = 'reminder', message, priority = 'medium' }) => {
+    try {
+        const notification = await Notification.create({
+            userId,
+            type,
+            category,
+            message,
+            priority
+        });
 
-/**
- * createNotification({ io, recipient, sender, category, type, message, priority, linkTo, meta })
- *
- * Call this from any route/controller whenever a notification-worthy event occurs.
- * `io` is optional — pass it in if you want real-time push.
- */
-const createNotification = async ({ io, recipient, sender = null, category, type, message, priority = 'medium', linkTo = null, meta = {} }) => {
-    const notif = await Notification.create({
-        recipient,
-        sender,
-        category,
-        type,
-        message,
-        priority,
-        linkTo,
-        meta,
-    });
+        // Emit real-time update via socket.io
+        if (io) {
+            io.to(`user_${userId}`).emit('new_notification', notification);
+        }
 
-    // Real-time push via Socket.io (if io instance is provided and user is connected)
-    if (io) {
-        // The frontend joins a personal room: socket.join(`user_${userId}`)
-        io.to(`user_${recipient.toString()}`).emit('notification', notif);
+        return notification;
+    } catch (err) {
+        console.error("Create Notification Error:", err);
+        throw err;
     }
-
-    return notif;
 };
 
-// ══════════════════════════════════════════════════════════════
-// GET /api/notifications — paginated, optional filter by category/read
-// ══════════════════════════════════════════════════════════════
+// GET /api/notifications
+// Fetch notifications for logged-in user
 const getNotifications = async (req, res) => {
     try {
-        const page = parseInt(req.query.page) || 1;
-        const limit = parseInt(req.query.limit) || 20;
-        const skip = (page - 1) * limit;
+        const { filter } = req.query; // 'all' or 'unread'
+        let query = { userId: req.user.id };
 
-        const filter = { recipient: req.user.id };
-        if (req.query.category) filter.category = req.query.category;
-        if (req.query.unread === 'true') filter.isRead = false;
+        if (filter === 'unread') {
+            query.read = false;
+        }
 
-        const [notifications, total, unreadCount] = await Promise.all([
-            Notification.find(filter)
-                .sort({ priority: 1, createdAt: -1 }) // high first, then newest
-                .skip(skip)
-                .limit(limit)
-                .populate('sender', 'name profilePicture headline')
-                .lean(),
-            Notification.countDocuments(filter),
-            Notification.countDocuments({ recipient: req.user.id, isRead: false }),
-        ]);
+        const notifications = await Notification.find(query)
+            .sort({ createdAt: -1 });
 
-        // Sort so "high" priority comes first within the result set
-        const priorityOrder = { high: 0, medium: 1, low: 2 };
-        notifications.sort((a, b) => {
-            const pDiff = priorityOrder[a.priority] - priorityOrder[b.priority];
-            if (pDiff !== 0) return pDiff;
-            return new Date(b.createdAt) - new Date(a.createdAt);
-        });
-
-        res.json({
-            notifications,
-            unreadCount,
-            pagination: {
-                page,
-                limit,
-                total,
-                hasMore: skip + notifications.length < total,
-            },
-        });
+        res.json({ notifications, unreadCount: notifications.filter(n => !n.read).length });
     } catch (err) {
         res.status(500).json({ error: err.message });
     }
 };
 
-// ══════════════════════════════════════════════════════════════
-// GET /api/notifications/unread-count
-// ══════════════════════════════════════════════════════════════
-const getUnreadCount = async (req, res) => {
-    try {
-        const count = await Notification.countDocuments({
-            recipient: req.user.id,
-            isRead: false,
-        });
-        res.json({ count });
-    } catch (err) {
-        res.status(500).json({ error: err.message });
-    }
-};
-
-// ══════════════════════════════════════════════════════════════
-// PUT /api/notifications/:id/read — mark single as read
-// ══════════════════════════════════════════════════════════════
+// PATCH /api/notifications/:id/read
+// Mark as read
 const markAsRead = async (req, res) => {
     try {
-        const notif = await Notification.findOneAndUpdate(
-            { _id: req.params.id, recipient: req.user.id },
-            { isRead: true },
+        const { id } = req.params;
+        const notification = await Notification.findOneAndUpdate(
+            { _id: id, userId: req.user.id },
+            { read: true },
             { new: true }
         );
-        if (!notif) return res.status(404).json({ message: 'Notification not found' });
-        res.json(notif);
+        if (!notification) return res.status(404).json({ message: "Notification not found" });
+        res.json(notification);
     } catch (err) {
         res.status(500).json({ error: err.message });
     }
 };
 
-// ══════════════════════════════════════════════════════════════
-// PUT /api/notifications/:id/unread — mark single as unread
-// ══════════════════════════════════════════════════════════════
-const markAsUnread = async (req, res) => {
-    try {
-        const notif = await Notification.findOneAndUpdate(
-            { _id: req.params.id, recipient: req.user.id },
-            { isRead: false },
-            { new: true }
-        );
-        if (!notif) return res.status(404).json({ message: 'Notification not found' });
-        res.json(notif);
-    } catch (err) {
-        res.status(500).json({ error: err.message });
-    }
-};
-
-// ══════════════════════════════════════════════════════════════
-// PUT /api/notifications/mark-all-read
-// ══════════════════════════════════════════════════════════════
+// PATCH /api/notifications/mark-all-read
 const markAllRead = async (req, res) => {
     try {
-        await Notification.updateMany(
-            { recipient: req.user.id, isRead: false },
-            { isRead: true }
-        );
-        res.json({ message: 'All notifications marked as read' });
+        await Notification.updateMany({ userId: req.user.id, read: false }, { read: true });
+        res.json({ success: true, message: "All marked as read" });
     } catch (err) {
         res.status(500).json({ error: err.message });
     }
 };
 
-// ══════════════════════════════════════════════════════════════
-// DELETE /api/notifications/:id
-// ══════════════════════════════════════════════════════════════
+const markAsUnread = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const notification = await Notification.findOneAndUpdate(
+            { _id: id, userId: req.user.id },
+            { read: false },
+            { new: true }
+        );
+        res.json(notification);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+};
+
 const deleteNotification = async (req, res) => {
     try {
-        const notif = await Notification.findOneAndDelete({
-            _id: req.params.id,
-            recipient: req.user.id,
-        });
-        if (!notif) return res.status(404).json({ message: 'Notification not found' });
-        res.json({ message: 'Notification deleted' });
+        await Notification.findOneAndDelete({ _id: req.params.id, userId: req.user.id });
+        res.json({ success: true });
     } catch (err) {
         res.status(500).json({ error: err.message });
     }
 };
 
-// ══════════════════════════════════════════════════════════════
-// DELETE /api/notifications/clear-all
-// ══════════════════════════════════════════════════════════════
 const clearAll = async (req, res) => {
     try {
-        await Notification.deleteMany({ recipient: req.user.id });
-        res.json({ message: 'All notifications cleared' });
+        await Notification.deleteMany({ userId: req.user.id });
+        res.json({ success: true, message: "All notifications cleared" });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+};
+
+// POST /api/notifications/test
+// Manually trigger a notification for testing
+const testCreateNotification = async (req, res) => {
+    try {
+        const { userId, type, category, message, priority } = req.body;
+        const io = req.app.get('io');
+
+        const notification = await createNotification(io, {
+            userId,
+            category: category || 'reminder',
+            type: type || 'test',
+            message: message || 'This is a test notification!',
+            priority: priority || 'medium'
+        });
+
+        res.status(201).json({ success: true, notification });
     } catch (err) {
         res.status(500).json({ error: err.message });
     }
@@ -173,10 +126,11 @@ const clearAll = async (req, res) => {
 module.exports = {
     createNotification,
     getNotifications,
-    getUnreadCount,
     markAsRead,
     markAsUnread,
     markAllRead,
     deleteNotification,
     clearAll,
+    testCreateNotification
 };
+

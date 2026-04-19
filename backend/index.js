@@ -11,6 +11,8 @@ const MessageRouter = require('./routers/MessageRouter');
 const ActivityRouter = require('./routers/ActivityRouter');
 const circleRouter = require('./routers/CircleRouter');
 const NotificationRouter = require('./routers/NotificationRouter');
+const FeedbackRouter = require('./routers/FeedbackRouter');
+const SearchRouter  = require('./routers/SearchRouter');
 const app = express();
 const server = http.createServer(app);
 const io = new Server(server, { cors: { origin: '*' } });
@@ -29,6 +31,8 @@ app.use('/api/messages', MessageRouter);
 app.use('/api', ActivityRouter); // Events, Polls, legacy Notifications
 app.use('/api/circles', circleRouter);
 app.use('/api/notifications', NotificationRouter); // Full notification module
+app.use('/api/feedback', FeedbackRouter); // Feedback & Reporting module
+app.use('/api', SearchRouter);           // Search & Discovery
 // Expose io so controllers can call io.to(...).emit(...)
 app.set('io', io);
 

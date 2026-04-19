@@ -15,4 +15,17 @@ api.interceptors.request.use((config) => {
   return config;
 });
 
+// Handle blocked users
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (error.response?.status === 403 && error.response?.data?.message?.includes('blocked')) {
+      if (typeof window !== 'undefined') {
+        window.location.href = '/blocked';
+      }
+    }
+    return Promise.reject(error);
+  }
+);
+
 export default api;

@@ -7,6 +7,7 @@ import CircleList from "@/components/dashboard/CircleList";
 import ActivityFeed from "@/components/dashboard/ActivityFeed";
 import ProfileCard from "@/components/dashboard/ProfileCard";
 import WaysToEarn from "@/components/dashboard/WaysToEarn";
+import DiscoverSection from "@/components/dashboard/DiscoverSection";
 import { useProfile } from "@/lib/useProfile";
 import api from "@/lib/axios";
 
@@ -72,6 +73,8 @@ const DashboardPage = () => {
               />
 
               <WaysToEarn />
+
+              <DiscoverSection />
             </div>
 
             {/* Right Column (Sidebar Content) */}

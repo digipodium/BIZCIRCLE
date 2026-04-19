@@ -1,6 +1,7 @@
 const User = require('../models/userModel');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
+const { createNotification } = require('./notificationController');
 
 const JWT_SECRET = process.env.JWT_SECRET || 'mytopseret';
 
@@ -180,4 +181,69 @@ const uploadAvatar = async (req, res) => {
   }
 };
 
-module.exports = { signup, login, getUserProfile, updateUserProfile, updatePoints, uploadAvatar };
+// GET /user/:id  (requires auth middleware)
+const getPublicProfile = async (req, res) => {
+  try {
+    const user = await User.findById(req.params.id)
+      .select('-password -email -phone') // Hide sensitive details
+      .populate('circles', 'name domain location icon');
+
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    res.json(user);
+  } catch (err) {
+    console.error('Get public profile error:', err);
+    res.status(500).json({ message: 'Server error' });
+  }
+};
+
+// POST /user/connect/:id  (requires auth middleware)
+const connectUser = async (req, res) => {
+  try {
+    const targetId = req.params.id;
+    const currentUserId = req.user.id;
+
+    if (targetId === currentUserId) {
+      return res.status(400).json({ message: "You cannot connect with yourself" });
+    }
+
+    const currentUser = await User.findById(currentUserId);
+    const targetUser = await User.findById(targetId);
+
+    if (!targetUser) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    // Check if already connected
+    if (currentUser.connections.includes(targetId)) {
+      return res.status(400).json({ message: "Already connected" });
+    }
+
+    // Add to current user's connections
+    currentUser.connections.push(targetId);
+    // Add to target user's connections (mutual connection)
+    targetUser.connections.push(currentUserId);
+
+    await currentUser.save();
+    await targetUser.save();
+
+    // Notify target user
+    const io = req.app.get('io');
+    await createNotification(io, {
+      userId: targetId,
+      category: 'connection',
+      type: 'connection_request', // or 'new_connection'
+      message: `${currentUser.name} has connected with you!`,
+      priority: 'medium'
+    });
+
+    res.json({ message: "Connected successfully", connectionsCount: currentUser.connections.length });
+  } catch (err) {
+    console.error('Connect user error:', err);
+    res.status(500).json({ message: 'Server error' });
+  }
+};
+
+module.exports = { signup, login, getUserProfile, updateUserProfile, updatePoints, uploadAvatar, getPublicProfile, connectUser };

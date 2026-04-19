@@ -10,12 +10,16 @@ import {
   Menu, 
   X,
   Star,
-  Bell
+  Bell,
+  MessageSquareWarning,
+  ShieldAlert
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { usePoints } from "@/context/PointsContext";
+import { useProfile } from "@/lib/useProfile";
 import NotificationBell from "@/components/NotificationBell";
+import SearchBar from "@/components/SearchBar";
 
 const Sidebar = () => {
   const [isOpen, setIsOpen] = useState(false);
@@ -23,12 +27,20 @@ const Sidebar = () => {
   const { points } = usePoints();
 
   const menuItems = [
-    { name: "Dashboard",     icon: LayoutDashboard, href: "/dashboard"        },
-    { name: "My Circles",    icon: Users,           href: "/dashboard/my-circles" },
-    { name: "Discover",      icon: Compass,         href: "/dashboard/discover" },
-    { name: "Profile",       icon: UserCircle,      href: "/profile"           },
-    { name: "Notifications", icon: Bell,            href: "/notifications"     },
+    { name: "Dashboard",     icon: LayoutDashboard,      href: "/dashboard"            },
+    { name: "My Circles",    icon: Users,                href: "/dashboard/my-circles" },
+    { name: "Explore",       icon: Compass,              href: "/dashboard/discover"   },
+    { name: "Profile",       icon: UserCircle,           href: "/profile"              },
+    { name: "Notifications", icon: Bell,                 href: "/notifications"        },
+    { name: "Support",       icon: MessageSquareWarning, href: "/support"              },
   ];
+
+  const { user } = useProfile();
+  const isAdmin = user?.role === 'admin';
+
+  if (isAdmin) {
+    menuItems.push({ name: "Moderation", icon: ShieldAlert, href: "/admin/moderation" });
+  }
 
   const activeClass = "bg-blue-50 text-blue-600 font-semibold shadow-sm";
   const inactiveClass = "text-slate-600 hover:bg-slate-50 hover:text-blue-600 transition-all duration-200";
@@ -71,8 +83,10 @@ const Sidebar = () => {
               </div>
               <span className="font-bold text-xl text-slate-900 tracking-tight">BizCircle</span>
             </div>
-            <NotificationBell />
           </div>
+
+          {/* Search Bar */}
+          <SearchBar />
 
           {/* Points Balance */}
           <div className="mb-8 px-2">

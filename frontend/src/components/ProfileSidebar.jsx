@@ -16,8 +16,8 @@ export default function ProfileSidebar() {
 
   const stats = [
     { label: "Circles Joined", value: user?.circles?.length ?? "—", icon: GitBranch, color: "text-blue-600" },
-    { label: "Connections", value: "—", icon: Users, color: "text-emerald-600" },
-    { label: "Referrals", value: "—", icon: Award, color: "text-amber-600" },
+    { label: "Connections", value: user?.connections?.length ?? 0, icon: Users, color: "text-emerald-600" },
+    { label: "Referrals", value: user?.referralsGiven ?? 0, icon: Award, color: "text-amber-600" },
   ];
 
   const quickLinks = [
