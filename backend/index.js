@@ -12,10 +12,8 @@ const ActivityRouter = require('./routers/ActivityRouter');
 const circleRouter = require('./routers/CircleRouter');
 const ReferralRouter = require('./routers/ReferralRouter');
 const NotificationRouter = require('./routers/NotificationRouter');
-<<<<<<< HEAD
-=======
 
->>>>>>> a9f8f002775334877bb039486d216a68adc064dd
+
 const app = express();
 const server = http.createServer(app);
 const io = new Server(server, { cors: { origin: '*' } });
@@ -31,18 +29,10 @@ app.use('/uploads', express.static('public/uploads'));
 app.use('/user', UserRouter);
 app.use('/group', GroupRouter);
 app.use('/api/messages', MessageRouter);
-<<<<<<< HEAD
 app.use('/api', ActivityRouter); // Events, Polls, legacy Notifications
 app.use('/api/circles', circleRouter);
 app.use('/api/referrals', ReferralRouter);
 app.use('/api/notifications', NotificationRouter); // Full notification module
-// Expose io so controllers can call io.to(...).emit(...)
-app.set('io', io);
-=======
-app.use('/api', ActivityRouter);
-app.use('/api/circles', circleRouter);
-app.use('/api/referrals', ReferralRouter);
-app.use('/api/notifications', NotificationRouter);
 
 // Health check endpoint
 app.get('/api/health', (req, res) => {
@@ -58,7 +48,6 @@ app.get('/api/health', (req, res) => {
 // Expose io so controllers can call io.to(...).emit(...)
 app.set('io', io);
 
->>>>>>> a9f8f002775334877bb039486d216a68adc064dd
 // Socket.io integration
 io.on('connection', (socket) => {
     console.log('User connected:', socket.id);
@@ -89,19 +78,14 @@ io.on('connection', (socket) => {
     });
 });
 
-<<<<<<< HEAD
-server.listen(port, () => {
-    const mongoose = require('mongoose');
-    console.log('Server running on port ' + port);
-    console.log('Registered Models:', mongoose.modelNames());
-});
-=======
 // Start server only AFTER DB is connected
 const startServer = async () => {
     try {
         await connectDB();
         server.listen(port, () => {
+            const mongoose = require('mongoose');
             console.log('Server running on port ' + port);
+            console.log('Registered Models:', mongoose.modelNames());
         });
     } catch (err) {
         console.error('❌ Failed to connect to database:', err.message);
@@ -110,4 +94,3 @@ const startServer = async () => {
 };
 
 startServer();
->>>>>>> a9f8f002775334877bb039486d216a68adc064dd

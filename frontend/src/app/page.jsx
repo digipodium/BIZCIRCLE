@@ -1,5 +1,7 @@
 "use client";
 import { useState, useEffect, useRef } from "react";
+import Link from "next/link";
+
 
 const NAV_LINKS = ["Home", "Features", "About", "Contact"];
 
@@ -235,8 +237,8 @@ export default function BizCircle() {
             </div>
 
             <div className="hidden md:flex items-center gap-3">
-              <a href="#" className="text-sm font-medium text-slate-600 hover:text-blue-600 transition-colors px-3 py-1.5">Sign In</a>
-              <a href="#" className="btn-primary text-white text-sm font-semibold px-5 py-2.5 rounded-xl">Join Now</a>
+              <Link href="/login" className="text-sm font-medium text-slate-600 hover:text-blue-600 transition-colors px-3 py-1.5">Sign In</Link>
+              <Link href="/signup" className="btn-primary text-white text-sm font-semibold px-5 py-2.5 rounded-xl">Join Now</Link>
             </div>
 
             <button onClick={() => setMenuOpen(!menuOpen)} className="md:hidden p-2 rounded-lg text-slate-600 hover:bg-blue-50">
@@ -250,7 +252,7 @@ export default function BizCircle() {
         {menuOpen && (
           <div className="md:hidden glass-nav border-t border-blue-50 px-6 py-4 space-y-3">
             {NAV_LINKS.map(l => <a key={l} href={`#${l.toLowerCase()}`} onClick={() => setMenuOpen(false)} className="block text-sm font-medium text-slate-700 hover:text-blue-600 py-1">{l}</a>)}
-            <a href="#" className="block btn-primary text-white text-sm font-semibold px-5 py-2.5 rounded-xl text-center mt-2">Join Now</a>
+            <Link href="/signup" className="block btn-primary text-white text-sm font-semibold px-5 py-2.5 rounded-xl text-center mt-2">Join Now</Link>
           </div>
         )}
       </nav>
@@ -281,10 +283,10 @@ export default function BizCircle() {
                 BizCircle connects entrepreneurs, students, and professionals to collaborate and discover opportunities — and rewards every step of your journey with BizPoints.
               </p>
               <div className={`flex flex-wrap gap-3 mb-10 fade-up d3 ${heroIn ? "visible" : ""}`}>
-                <a href="#" className="btn-primary text-white font-semibold px-7 py-3.5 rounded-xl flex items-center gap-2">
+                <Link href="/signup" className="btn-primary text-white font-semibold px-7 py-3.5 rounded-xl flex items-center gap-2">
                   Get Started Free
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
-                </a>
+                </Link>
                 <a href="#features" className="flex items-center gap-2 bg-white text-slate-700 font-semibold px-7 py-3.5 rounded-xl border border-slate-200 hover:border-blue-300 hover:text-blue-600 transition-all duration-200 shadow-sm">
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M10 8l6 4-6 4V8z" fill="currentColor"/></svg>
                   Learn More
@@ -481,10 +483,10 @@ export default function BizCircle() {
             🎁 Sign up now and get 50 BizPoints just for completing your profile.
           </p>
           <div className={`flex flex-col sm:flex-row items-center justify-center gap-4 fade-up d3 ${ctaIn ? "visible" : ""}`}>
-            <a href="#" className="btn-primary text-white font-semibold text-base px-8 py-4 rounded-xl w-full sm:w-auto flex items-center justify-center gap-2">
+            <Link href="/signup" className="btn-primary text-white font-semibold text-base px-8 py-4 rounded-xl w-full sm:w-auto flex items-center justify-center gap-2">
               Create Free Account
               <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
-            </a>
+            </Link>
             <a href="#features" className="bg-slate-50 text-slate-700 font-semibold text-base px-8 py-4 rounded-xl border border-slate-200 hover:border-blue-300 hover:text-blue-600 transition-all duration-200 w-full sm:w-auto text-center">
               Explore Features
             </a>

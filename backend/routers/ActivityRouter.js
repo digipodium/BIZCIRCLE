@@ -3,8 +3,11 @@ const router = express.Router();
 const Event = require('../models/eventModel');
 const Poll = require('../models/pollModel');
 const Notification = require('../models/notificationModel');
-const Activity = require('../models/activityModel');  // NEW
+const Activity = require('../models/activityModel');
 const GroupMember = require('../models/groupMemberModel');
+const Circle = require('../models/circleModel');
+const User = require('../models/userModel');
+const Group = require('../models/groupModel');
 const auth = require('../middleware/auth');
 
 // ==========================
@@ -22,7 +25,7 @@ router.get('/feed', auth, async (req, res) => {
             .sort({ createdAt: -1 })
             .skip(skip)
             .limit(limit)
-            .populate('targetId');  // works for Circle, User, Group via refPath
+            .populate({ path: 'targetId', strictPopulate: false });  // works for Circle, User, Group via refPath
 
         const total = await Activity.countDocuments({ userId: req.user.id });
 
@@ -36,7 +39,8 @@ router.get('/feed', auth, async (req, res) => {
             },
         });
     } catch (err) {
-        res.status(500).json({ error: err.message });
+        console.error('Activity Feed Error:', err);
+        res.status(500).json({ error: err.message, stack: err.stack });
     }
 });
 
