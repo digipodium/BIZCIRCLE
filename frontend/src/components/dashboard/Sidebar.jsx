@@ -14,7 +14,9 @@ import {
   MessageSquareWarning,
   ShieldAlert,
   Shield,
-  Send
+  Send,
+  Search,
+  Globe
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -31,8 +33,9 @@ const Sidebar = () => {
 
   const menuItems = [
     { name: "Dashboard", icon: LayoutDashboard, href: "/dashboard" },
+    { name: "Explore Circles", icon: Compass, href: "/dashboard/circles" },
     { name: "My Circles", icon: Users, href: "/dashboard/my-circles" },
-    { name: "Explore", icon: Compass, href: "/dashboard/discover" },
+    { name: "Discover", icon: Search, href: "/dashboard/discover" },
     { name: "Referrals", icon: Send, href: "/dashboard/referrals" },
     { name: "Profile", icon: UserCircle, href: "/profile" },
     { name: "Notifications", icon: Bell, href: "/notifications" },
