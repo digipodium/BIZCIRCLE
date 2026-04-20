@@ -12,7 +12,8 @@ import {
   Star,
   Bell,
   MessageSquareWarning,
-  ShieldAlert
+  ShieldAlert,
+  Send
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -30,6 +31,7 @@ const Sidebar = () => {
     { name: "Dashboard", icon: LayoutDashboard, href: "/dashboard" },
     { name: "My Circles", icon: Users, href: "/dashboard/my-circles" },
     { name: "Explore", icon: Compass, href: "/dashboard/discover" },
+    { name: "Referrals", icon: Send, href: "/dashboard/referrals" },
     { name: "Profile", icon: UserCircle, href: "/profile" },
     { name: "Notifications", icon: Bell, href: "/notifications" },
     { name: "Support", icon: MessageSquareWarning, href: "/support" },
@@ -124,9 +126,29 @@ const Sidebar = () => {
             })}
           </nav>
 
-          {/* Logout */}
-          <div className="pt-6 border-t border-slate-50">
-            <button className="flex items-center gap-3 w-full px-4 py-3 rounded-xl text-sm text-red-500 hover:bg-red-50 transition-colors duration-200">
+          {/* User Profile & Logout */}
+          <div className="pt-6 border-t border-slate-50 mt-auto">
+            <div className="flex items-center gap-3 px-2 mb-4">
+              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-500 to-blue-700 flex items-center justify-center text-white font-bold text-sm overflow-hidden border border-slate-100 shadow-sm">
+                {user?.profilePicture ? (
+                  <img src={user.profilePicture} alt={user.name} className="w-full h-full object-cover" />
+                ) : (
+                  user?.name ? user.name.split(" ").map(n => n[0]).join("").toUpperCase().slice(0, 2) : "??"
+                )}
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-bold text-slate-900 truncate">{user?.name || "Guest"}</p>
+                <p className="text-[10px] font-medium text-slate-400 truncate uppercase tracking-wider">{user?.role || "Member"}</p>
+              </div>
+            </div>
+            <button 
+              onClick={() => {
+                localStorage.removeItem('token');
+                localStorage.removeItem('userId');
+                window.location.href = '/login';
+              }}
+              className="flex items-center gap-3 w-full px-4 py-3 rounded-xl text-sm text-red-500 hover:bg-red-50 transition-colors duration-200 font-semibold"
+            >
               <LogOut size={18} />
               Logout
             </button>

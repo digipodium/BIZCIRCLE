@@ -13,7 +13,7 @@ const circleRouter = require('./routers/CircleRouter');
 const ReferralRouter = require('./routers/ReferralRouter');
 const NotificationRouter = require('./routers/NotificationRouter');
 const FeedbackRouter = require('./routers/FeedbackRouter');
-const SearchRouter  = require('./routers/SearchRouter');
+const SearchRouter = require('./routers/SearchRouter');
 
 const app = express();
 const server = http.createServer(app);
@@ -30,12 +30,12 @@ app.use('/uploads', express.static('public/uploads'));
 app.use('/user', UserRouter);
 app.use('/group', GroupRouter);
 app.use('/api/messages', MessageRouter);
-app.use('/api', ActivityRouter);
 app.use('/api/circles', circleRouter);
 app.use('/api/referrals', ReferralRouter);
 app.use('/api/notifications', NotificationRouter);
 app.use('/api/feedback', FeedbackRouter);
 app.use('/api', SearchRouter);
+app.use('/api', ActivityRouter);
 
 // Health check endpoint
 app.get('/api/health', (req, res) => {

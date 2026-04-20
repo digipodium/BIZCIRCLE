@@ -15,16 +15,18 @@ import { usePoints } from "@/context/PointsContext";
 import { Star } from "lucide-react";
 import NotificationBell from "@/components/NotificationBell";
 
-import Link from "next/link";
-
 function NavAvatar() {
   const { user } = useProfile();
   const initials = user?.name
     ? user.name.split(" ").map((n) => n[0]).join("").toUpperCase().slice(0, 2)
     : "?";
   return (
-    <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-blue-700 flex items-center justify-center text-white text-xs font-semibold cursor-pointer">
-      {initials}
+    <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-blue-700 flex items-center justify-center text-white text-xs font-semibold cursor-pointer overflow-hidden border border-white/20">
+      {user?.profilePicture ? (
+        <img src={user.profilePicture} alt={user.name} className="w-full h-full object-cover" />
+      ) : (
+        initials
+      )}
     </div>
   );
 }

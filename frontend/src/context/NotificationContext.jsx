@@ -18,7 +18,9 @@ const CATEGORY_EMOJI = {
     reminder:     '⏰',
 };
 
-const BASE_URL = 'http://localhost:5000';
+import api from '@/lib/axios';
+
+const BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
 
 export const NotificationProvider = ({ children }) => {
     const [notifications, setNotifications] = useState([]);
@@ -32,10 +34,7 @@ export const NotificationProvider = ({ children }) => {
         if (!token) { setLoading(false); return; }
 
         try {
-            const res  = await fetch(`${BASE_URL}/api/notifications`, {
-                headers: { Authorization: `Bearer ${token}` },
-            });
-            const data = await res.json();
+            const { data } = await api.get('/api/notifications');
             setNotifications(data.notifications || []);
             setUnreadCount(data.unreadCount    || 0);
         } catch (err) {
@@ -123,13 +122,9 @@ export const NotificationProvider = ({ children }) => {
 
     // ── Mark single as read ──────────────────────────────────────────────────
     const markRead = async (id) => {
-        const token = localStorage.getItem('token');
         try {
-            const res = await fetch(`${BASE_URL}/api/notifications/${id}/read`, {
-                method: 'PATCH',
-                headers: { Authorization: `Bearer ${token}` },
-            });
-            if (res.ok) {
+            const res = await api.patch(`/api/notifications/${id}/read`);
+            if (res.status === 200) {
                 setNotifications(prev =>
                     prev.map(n => n._id === id ? { ...n, read: true } : n)
                 );
@@ -142,13 +137,9 @@ export const NotificationProvider = ({ children }) => {
 
     // ── Mark single as unread ────────────────────────────────────────────────
     const markUnread = async (id) => {
-        const token = localStorage.getItem('token');
         try {
-            const res = await fetch(`${BASE_URL}/api/notifications/${id}/unread`, {
-                method: 'PATCH',
-                headers: { Authorization: `Bearer ${token}` },
-            });
-            if (res.ok) {
+            const res = await api.patch(`/api/notifications/${id}/unread`);
+            if (res.status === 200) {
                 setNotifications(prev =>
                     prev.map(n => n._id === id ? { ...n, read: false } : n)
                 );
@@ -161,13 +152,9 @@ export const NotificationProvider = ({ children }) => {
 
     // ── Mark ALL as read ─────────────────────────────────────────────────────
     const markAllRead = async () => {
-        const token = localStorage.getItem('token');
         try {
-            const res = await fetch(`${BASE_URL}/api/notifications/mark-all-read`, {
-                method: 'PATCH',
-                headers: { Authorization: `Bearer ${token}` },
-            });
-            if (res.ok) {
+            const res = await api.patch('/api/notifications/mark-all-read');
+            if (res.status === 200) {
                 setNotifications(prev => prev.map(n => ({ ...n, read: true })));
                 setUnreadCount(0);
             }
@@ -178,13 +165,9 @@ export const NotificationProvider = ({ children }) => {
 
     // ── Delete single ────────────────────────────────────────────────────────
     const deleteNotif = async (id) => {
-        const token = localStorage.getItem('token');
         try {
-            const res = await fetch(`${BASE_URL}/api/notifications/${id}`, {
-                method: 'DELETE',
-                headers: { Authorization: `Bearer ${token}` },
-            });
-            if (res.ok) {
+            const res = await api.delete(`/api/notifications/${id}`);
+            if (res.status === 200) {
                 setNotifications(prev => {
                     const wasUnread = prev.find(n => n._id === id && !n.read);
                     if (wasUnread) setUnreadCount(c => Math.max(0, c - 1));
@@ -198,13 +181,9 @@ export const NotificationProvider = ({ children }) => {
 
     // ── Clear all ────────────────────────────────────────────────────────────
     const clearAll = async () => {
-        const token = localStorage.getItem('token');
         try {
-            const res = await fetch(`${BASE_URL}/api/notifications/clear-all`, {
-                method: 'DELETE',
-                headers: { Authorization: `Bearer ${token}` },
-            });
-            if (res.ok) {
+            const res = await api.delete('/api/notifications/clear-all');
+            if (res.status === 200) {
                 setNotifications([]);
                 setUnreadCount(0);
             }

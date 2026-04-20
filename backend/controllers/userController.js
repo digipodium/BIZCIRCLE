@@ -1,6 +1,8 @@
 const User = require('../models/userModel');
 const GroupMember = require('../models/groupMemberModel');
 const Group = require('../models/groupModel');
+const Activity = require('../models/activityModel');
+const mongoose = require('mongoose');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const { createNotification } = require('./notificationController');
@@ -321,4 +323,71 @@ const connectUser = async (req, res) => {
   }
 };
 
-module.exports = { signup, login, getUserProfile, updateUserProfile, updatePoints, uploadAvatar, getPublicProfile, connectUser };
+// GET /user/analytics
+const getUserAnalytics = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const sevenDaysAgo = new Date();
+    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+
+    // Aggregate counts by day
+    const activities = await Activity.aggregate([
+      {
+        $match: {
+          userId: new mongoose.Types.ObjectId(userId),
+          createdAt: { $gte: sevenDaysAgo }
+        }
+      },
+      {
+        $group: {
+          _id: { $dateToString: { format: "%Y-%m-%d", date: "$createdAt" } },
+          count: { $sum: 1 }
+        }
+      },
+      { $sort: { "_id": 1 } }
+    ]);
+
+    // Ensure all 7 days are present in the result
+    const last7Days = [];
+    for (let i = 6; i >= 0; i--) {
+      const d = new Date();
+      d.setDate(d.getDate() - i);
+      const dateStr = d.toISOString().split('T')[0];
+      const found = activities.find(a => a._id === dateStr);
+      last7Days.push({
+        date: dateStr,
+        count: found ? found.count : 0
+      });
+    }
+
+    res.json(last7Days);
+  } catch (err) {
+    console.error('Analytics error:', err);
+    res.status(500).json({ message: 'Server error' });
+  }
+};
+
+// GET /user/all
+const getAllUsers = async (req, res) => {
+  try {
+    const users = await User.find({}).select('name profilePicture headline role organization');
+    res.json(users);
+  } catch (err) {
+    console.error('Get all users error:', err);
+    res.status(500).json({ message: 'Server error' });
+  }
+};
+
+module.exports = {
+  signup,
+  login,
+  googleLogin,
+  getUserProfile,
+  updateUserProfile,
+  updatePoints,
+  uploadAvatar,
+  getPublicProfile,
+  connectUser,
+  getUserAnalytics,
+  getAllUsers
+};

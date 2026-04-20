@@ -22,7 +22,8 @@ export default function NetworkingAnalytics() {
     fetchAnalytics();
   }, []);
 
-  const maxCount = Math.max(...data.map(d => d.count), 5);
+  const chartData = Array.isArray(data) ? data : [];
+  const maxCount = Math.max(...chartData.map(d => d.count), 5);
 
   return (
     <div className="bg-white rounded-[2rem] border border-slate-100 p-8 shadow-sm relative overflow-hidden group">
@@ -44,7 +45,7 @@ export default function NetworkingAnalytics() {
       ) : (
         <div className="relative z-10">
           <div className="flex items-end justify-between h-40 gap-2 mb-8">
-            {data.map((day, idx) => {
+            {chartData.map((day, idx) => {
               const height = (day.count / maxCount) * 100;
               const date = new Date(day.date);
               const dayName = date.toLocaleDateString("en-US", { weekday: "short" });
@@ -84,7 +85,7 @@ export default function NetworkingAnalytics() {
                    <span className="text-[10px] font-black uppercase tracking-widest">Total Growth</span>
                 </div>
                 <div className="text-2xl font-black text-slate-800">
-                  +{data.reduce((acc, d) => acc + d.count, 0)}
+                  +{chartData.reduce((acc, d) => acc + d.count, 0)}
                 </div>
              </div>
              <div className="bg-slate-50 p-4 rounded-2xl border border-slate-100">

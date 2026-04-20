@@ -18,8 +18,18 @@ const ProfileCard = () => {
     <div className="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm mb-8">
       <div className="flex items-center gap-4">
         {/* Avatar Placeholder */}
-        <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-blue-500 to-indigo-500 flex items-center justify-center text-white shadow-lg shadow-blue-100 shrink-0 font-bold text-xl">
-          {loading ? "..." : initials}
+        <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-blue-500 to-indigo-500 flex items-center justify-center text-white shadow-lg shadow-blue-100 shrink-0 font-bold text-xl overflow-hidden border-2 border-white">
+          {loading ? (
+            "..."
+          ) : user?.profilePicture ? (
+            <img 
+              src={user.profilePicture} 
+              alt={user.name} 
+              className="w-full h-full object-cover"
+            />
+          ) : (
+            initials
+          )}
         </div>
         
         <div className="flex-1 min-w-0">

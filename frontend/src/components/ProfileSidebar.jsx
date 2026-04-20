@@ -35,8 +35,18 @@ export default function ProfileSidebar() {
         {/* Avatar Area */}
         <div className="flex justify-center -mt-14 mb-4">
           <div className="relative">
-            <div className="w-24 h-24 rounded-2xl bg-gradient-to-br from-blue-500 to-blue-700 flex items-center justify-center text-white text-3xl font-bold shadow-lg border-4 border-white">
-              {loading ? "..." : initials}
+            <div className="w-24 h-24 rounded-2xl bg-gradient-to-br from-blue-500 to-blue-700 flex items-center justify-center text-white text-3xl font-bold shadow-lg border-4 border-white overflow-hidden">
+              {loading ? (
+                "..."
+              ) : user?.profilePicture ? (
+                <img 
+                  src={user.profilePicture} 
+                  alt={user.name} 
+                  className="w-full h-full object-cover"
+                />
+              ) : (
+                initials
+              )}
             </div>
             <div className="absolute -bottom-1 -right-1 w-5 h-5 bg-emerald-500 rounded-full border-2 border-white" title="Online" />
           </div>
