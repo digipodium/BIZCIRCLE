@@ -28,17 +28,15 @@ function GroupCard({ group }) {
       }}
     >
       {/* Card Top Banner */}
-      <div style={{
-        background: `linear-gradient(135deg, ${group.color.replace("from-", "").replace(" to-", ", ")})`,
-        backgroundImage: group.color.includes("from-")
-          ? undefined
-          : `linear-gradient(135deg, #2563eb, #1d4ed8)`,
-        height: "90px",
-        position: "relative",
-        display: "flex",
-        alignItems: "flex-end",
-        padding: "0 20px 16px",
-      }}
+      <div 
+        style={{
+          background: !group.color.includes("from-") ? group.color : undefined,
+          height: "90px",
+          position: "relative",
+          display: "flex",
+          alignItems: "flex-end",
+          padding: "0 20px 16px",
+        }}
         className={`bg-gradient-to-br ${group.color}`}
       >
         {/* Group Icon */}

@@ -31,6 +31,13 @@ app.use('/uploads', express.static('public/uploads'));
 app.use('/user', UserRouter);
 app.use('/group', GroupRouter);
 app.use('/api/messages', MessageRouter);
+app.use('/api', ActivityRouter); // Events, Polls, legacy Notifications
+app.use('/api/circles', circleRouter);
+app.use('/api/referrals', ReferralRouter);
+app.use('/api/notifications', NotificationRouter); // Full notification module
+// Expose io so controllers can call io.to(...).emit(...)
+app.set('io', io);
+
 app.use('/api/circles', circleRouter);
 app.use('/api/referrals', ReferralRouter);
 app.use('/api/notifications', NotificationRouter);

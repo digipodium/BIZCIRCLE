@@ -3,6 +3,7 @@ const GroupMember = require('../models/groupMemberModel');
 const Group = require('../models/groupModel');
 const Activity = require('../models/activityModel');
 const mongoose = require('mongoose');
+const Circle = require('../models/circleModel');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const { createNotification } = require('./notificationController');
@@ -166,7 +167,7 @@ const getUserProfile = async (req, res) => {
     res.json({ ...user.toObject(), joinedGroups });
   } catch (err) {
     console.error('Get profile error:', err);
-    res.status(500).json({ message: 'Server error' });
+    res.status(500).json({ message: err.message || 'Server error' });
   }
 };
 

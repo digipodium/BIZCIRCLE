@@ -33,6 +33,26 @@ export default function MeetingReminder() {
     setActiveReminders(prev => prev.filter(r => r._id !== id));
   };
 
+  const triggerReminder = (meeting) => {
+    // 1. Browser Notification
+    if (Notification.permission === "granted") {
+      new Notification("Upcoming Meeting: " + meeting.title, {
+        body: `Starting in 5 minutes! Click to join.`,
+        icon: "/logo.png" // assuming a logo exists
+      });
+    }
+
+    // 2. In-App Toast
+    setActiveReminders(prev => {
+      if (prev.find(r => r._id === meeting._id)) return prev;
+      return [...prev, meeting];
+    });
+  };
+
+  const removeReminder = (id) => {
+    setActiveReminders(prev => prev.filter(r => r._id !== id));
+  };
+
   useEffect(() => {
     if (typeof window !== "undefined") {
       if (Notification.permission === "default") {
