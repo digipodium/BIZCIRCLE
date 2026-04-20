@@ -178,9 +178,6 @@ export default function AdminDashboard() {
         <div className="animate-in fade-in duration-700">
           {renderSection()}
         </div>
-<<<<<<< HEAD
-      )}
-=======
       </nav>
 
       {/* Main Content */ }
@@ -236,7 +233,6 @@ export default function AdminDashboard() {
     )
     }
   </main >
->>>>>>> d28880a194ca441c094a03eb3fc5c115a1862683
 
   {/* Create Group Modal */ }
   {
