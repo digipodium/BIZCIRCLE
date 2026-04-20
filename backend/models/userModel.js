@@ -8,7 +8,11 @@ const userSchema = new mongoose.Schema({
   googleId: { type: String, unique: true, sparse: true }, // Sparse allows multiple nulls
   bio: String,
   skills: [{ type: String }],
-  role: String,
+  role: { 
+    type: String, 
+    enum: ["user", "admin"], 
+    default: "user" 
+  },
   organization: String,
 
   // Extended profile fields

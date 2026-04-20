@@ -1,8 +1,9 @@
 const Referral = require('../models/referralModel');
 const User = require('../models/userModel');
 const Activity = require('../models/activityModel');
+const Notification = require('../models/notificationModel');
 const crypto = require('crypto');
-const { sendVerificationEmail } = require('../utils/mailer');
+const { sendVerificationEmail, sendReferralReceivedEmail } = require('../utils/mailer');
 
 const createReferral = async (req, res) => {
     try {
@@ -42,21 +43,38 @@ const createReferral = async (req, res) => {
             verificationLink
         });
 
-        // Email to Receiver (Notification) if internal
+        // Notification and Email to Receiver if internal
         if (receiverId) {
             try {
                 const receiverUser = await User.findById(receiverId).select('name email');
-                if (receiverUser && receiverUser.email) {
-                    const { sendReferralReceivedEmail } = require('../utils/mailer');
-                    await sendReferralReceivedEmail({
-                        to: receiverUser.email,
-                        receiverName: receiverUser.name,
-                        senderName,
-                        candidateName
+                if (receiverUser) {
+                    // Create in-app notification
+                    await Notification.create({
+                        recipient: receiverUser._id,
+                        sender: senderId,
+                        category: 'referral',
+                        type: 'referral_received',
+                        message: `${senderName} has sent you a new referral for ${candidateName}.`,
+                        priority: 'high',
+                        linkTo: '/dashboard/referrals',
+                        meta: new Map([
+                            ['candidateName', candidateName],
+                            ['senderName', senderName]
+                        ])
                     });
+
+                    // Send email notification
+                    if (receiverUser.email) {
+                        await sendReferralReceivedEmail({
+                            to: receiverUser.email,
+                            receiverName: receiverUser.name,
+                            senderName,
+                            candidateName
+                        });
+                    }
                 }
-            } catch (emailErr) {
-                console.error('Failed to send receiver notification email:', emailErr);
+            } catch (notifErr) {
+                console.error('Failed to send receiver notification/email:', notifErr);
                 // Non-fatal error for the request
             }
         }

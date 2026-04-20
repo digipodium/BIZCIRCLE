@@ -13,6 +13,7 @@ import {
   Bell,
   MessageSquareWarning,
   ShieldAlert,
+  Shield,
   Send
 } from "lucide-react";
 import Link from "next/link";
@@ -26,6 +27,7 @@ const Sidebar = () => {
   const [isOpen, setIsOpen] = useState(false);
   const pathname = usePathname();
   const { points } = usePoints();
+  const { user } = useProfile();
 
   const menuItems = [
     { name: "Dashboard", icon: LayoutDashboard, href: "/dashboard" },
@@ -37,10 +39,9 @@ const Sidebar = () => {
     { name: "Support", icon: MessageSquareWarning, href: "/support" },
   ];
 
-  const { user } = useProfile();
-  const isAdmin = user?.role === 'admin';
-
+  const isAdmin = user?.role?.toLowerCase() === 'admin';
   if (isAdmin) {
+    menuItems.push({ name: "Admin Dashboard", icon: Shield, href: "/admin" });
     menuItems.push({ name: "Moderation", icon: ShieldAlert, href: "/admin/moderation" });
   }
 

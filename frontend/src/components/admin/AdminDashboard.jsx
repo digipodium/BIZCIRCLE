@@ -2,19 +2,28 @@
 
 import { useState, useEffect } from "react";
 import api from "../../lib/axios";
+import { useProfile } from "../../lib/useProfile";
+import AdminLayout from "./layout/AdminLayout";
 import AdminHeader from "./AdminHeader";
 import StatsSection from "./StatsSection";
-import GroupsSection from "./GroupsSection";
-import JoinRequestsSection from "./JoinRequestsSection";
-import ConstraintBanner from "./ConstraintBanner";
 import CreateGroupModal from "./CreateGroupModal";
-import { useProfile } from "../../lib/useProfile";
-import AdminNotificationDropdown from "./AdminNotificationDropdown";
+
+// Sections
+import OverviewSection from "./sections/OverviewSection";
+import UserManagementSection from "./sections/UserManagementSection";
+import GroupManagementSection from "./sections/GroupManagementSection";
+import ContentModerationSection from "./sections/ContentModerationSection";
+import ReportsSection from "./sections/ReportsSection";
+import AnalyticsSection from "./sections/AnalyticsSection";
+import NotificationsSection from "./sections/NotificationsSection";
+import SystemSettingsSection from "./sections/SystemSettingsSection";
+import LogsSection from "./sections/LogsSection";
 
 export default function AdminDashboard() {
   const [groups, setGroups] = useState([]);
   const [requests, setRequests] = useState([]);
   const [showModal, setShowModal] = useState(false);
+  const [activeSection, setActiveSection] = useState("overview");
   const [toast, setToast] = useState(null);
   const [loading, setLoading] = useState(true);
   const { user } = useProfile();
@@ -99,14 +108,47 @@ export default function AdminDashboard() {
     }
   };
 
+  // Map activeSection to component
+  const renderSection = () => {
+    switch (activeSection) {
+      case "overview":
+        return <OverviewSection />;
+      case "users":
+        return <UserManagementSection />;
+      case "groups":
+        return (
+          <GroupManagementSection 
+            groups={groups} 
+            requests={requests} 
+            onAccept={handleAccept} 
+            onReject={handleReject} 
+          />
+        );
+      case "moderation":
+        return <ContentModerationSection />;
+      case "reports":
+        return <ReportsSection />;
+      case "analytics":
+        return <AnalyticsSection />;
+      case "notifications":
+        return <NotificationsSection />;
+      case "settings":
+        return <SystemSettingsSection />;
+      case "logs":
+        return <LogsSection />;
+      default:
+        return <OverviewSection />;
+    }
+  };
+
   return (
-    <div className="min-h-screen bg-gray-50 font-sans">
+    <AdminLayout activeSection={activeSection} setActiveSection={setActiveSection}>
       {/* Toast Notification */}
       {toast && (
         <div
           style={{
             position: "fixed",
-            top: "24px",
+            top: "80px",
             right: "24px",
             zIndex: 9999,
             display: "flex",
@@ -191,7 +233,16 @@ export default function AdminDashboard() {
           }}>Admin</span>
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: "20px" }}>
-          <AdminNotificationDropdown />
+          <button style={{
+            background: "none",
+            border: "none",
+            cursor: "pointer",
+            color: "#6b7280",
+            fontSize: "20px",
+            padding: "6px",
+            borderRadius: "8px",
+            transition: "background 0.2s",
+          }}>🔔</button>
           <div style={{
             width: "38px",
             height: "38px",
@@ -204,7 +255,7 @@ export default function AdminDashboard() {
             fontWeight: 700,
             fontSize: "14px",
             cursor: "pointer",
-          }}>{user?.name?.split(" ").map(n => n[0]).join("").toUpperCase() || "A"}</div>
+          }}>SG</div>
         </div>
       </nav>
 
@@ -234,27 +285,11 @@ export default function AdminDashboard() {
             </div>
 
 
-        <div className="fade-up" style={{ animationDelay: "0.1s" }}>
-          <StatsSection
-            totalGroups={groups.length}
-            totalMembers={totalMembers}
-            pendingRequests={requests.length}
-          />
-        </div>
-
-            <div className="fade-up" style={{ animationDelay: "0.2s" }}>
-              <ConstraintBanner />
-            </div>
-
-            <div className="fade-up" style={{ animationDelay: "0.25s" }}>
-              <GroupsSection groups={groups} />
-            </div>
-
-            <div className="fade-up" style={{ animationDelay: "0.3s" }}>
-              <JoinRequestsSection
-                requests={requests}
-                onAccept={handleAccept}
-                onReject={handleReject}
+            <div className="fade-up" style={{ animationDelay: "0.1s" }}>
+              <StatsSection
+                totalGroups={groups.length}
+                totalMembers={totalMembers}
+                pendingRequests={requests.length}
               />
             </div>
           </>
@@ -269,6 +304,6 @@ export default function AdminDashboard() {
           onCreate={handleCreateGroup}
         />
       )}
-    </div>
+    </AdminLayout>
   );
 }
