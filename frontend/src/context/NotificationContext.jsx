@@ -1,6 +1,7 @@
 "use client";
 
 import React, { createContext, useContext, useEffect, useState, useCallback, useRef } from 'react';
+import { useProfile } from '@/lib/useProfile';
 import { io } from 'socket.io-client';
 import toast from 'react-hot-toast';
 
@@ -26,6 +27,7 @@ export const NotificationProvider = ({ children }) => {
     const [notifications, setNotifications] = useState([]);
     const [unreadCount, setUnreadCount]     = useState(0);
     const [loading, setLoading]             = useState(true);
+    const { user }                          = useProfile();
     const socketRef                         = useRef(null);
 
     // ── Fetch all notifications for logged-in user ──────────────────────────
@@ -34,7 +36,9 @@ export const NotificationProvider = ({ children }) => {
         if (!token) { setLoading(false); return; }
 
         try {
-            const { data } = await api.get('/api/notifications');
+            const isAdmin = user?.role?.toLowerCase() === 'admin';
+            const endpoint = isAdmin ? '/api/admin/notifications' : '/api/notifications';
+            const { data } = await api.get(endpoint);
             setNotifications(data.notifications || []);
             setUnreadCount(data.unreadCount    || 0);
         } catch (err) {
@@ -42,7 +46,7 @@ export const NotificationProvider = ({ children }) => {
         } finally {
             setLoading(false);
         }
-    }, []);
+    }, [user]);
 
     // ── Socket.IO connection ─────────────────────────────────────────────────
     useEffect(() => {
@@ -123,7 +127,9 @@ export const NotificationProvider = ({ children }) => {
     // ── Mark single as read ──────────────────────────────────────────────────
     const markRead = async (id) => {
         try {
-            const res = await api.patch(`/api/notifications/${id}/read`);
+            const isAdmin = user?.role?.toLowerCase() === 'admin';
+            const endpoint = isAdmin ? `/api/admin/notifications/${id}/read` : `/api/notifications/${id}/read`;
+            const res = await api.patch(endpoint);
             if (res.status === 200) {
                 setNotifications(prev =>
                     prev.map(n => n._id === id ? { ...n, read: true } : n)

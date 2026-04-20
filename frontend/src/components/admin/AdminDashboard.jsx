@@ -8,6 +8,8 @@ import GroupsSection from "./GroupsSection";
 import JoinRequestsSection from "./JoinRequestsSection";
 import ConstraintBanner from "./ConstraintBanner";
 import CreateGroupModal from "./CreateGroupModal";
+import { useProfile } from "../../lib/useProfile";
+import AdminNotificationDropdown from "./AdminNotificationDropdown";
 
 export default function AdminDashboard() {
   const [groups, setGroups] = useState([]);
@@ -15,6 +17,7 @@ export default function AdminDashboard() {
   const [showModal, setShowModal] = useState(false);
   const [toast, setToast] = useState(null);
   const [loading, setLoading] = useState(true);
+  const { user } = useProfile();
 
   useEffect(() => {
     fetchDashboardData();
@@ -188,16 +191,7 @@ export default function AdminDashboard() {
           }}>Admin</span>
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: "20px" }}>
-          <button style={{
-            background: "none",
-            border: "none",
-            cursor: "pointer",
-            color: "#6b7280",
-            fontSize: "20px",
-            padding: "6px",
-            borderRadius: "8px",
-            transition: "background 0.2s",
-          }}>🔔</button>
+          <AdminNotificationDropdown />
           <div style={{
             width: "38px",
             height: "38px",
@@ -210,7 +204,7 @@ export default function AdminDashboard() {
             fontWeight: 700,
             fontSize: "14px",
             cursor: "pointer",
-          }}>SG</div>
+          }}>{user?.name?.split(" ").map(n => n[0]).join("").toUpperCase() || "A"}</div>
         </div>
       </nav>
 

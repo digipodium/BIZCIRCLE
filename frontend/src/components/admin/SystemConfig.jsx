@@ -3,6 +3,7 @@
 import { useState, useCallback, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useProfile } from "@/lib/useProfile";
+import AdminNotificationDropdown from "./AdminNotificationDropdown";
 
 // ─────────────────────────────────────────────
 // ICONS (inline SVG to avoid any import issues)
@@ -1105,7 +1106,7 @@ export default function SystemConfig() {
 
   const activeLabel = SECTIONS.find(s => s.id === activeSection)?.label || "";
 
-  if (!profileLoading && isInitialized && (!user || user.role !== "admin")) {
+  if (!profileLoading && isInitialized && (!user || user.role?.toLowerCase() !== "admin")) {
     return (
       <div style={{
         height: "100vh", background: T.bg, display: "flex", flexDirection: "column",
@@ -1337,6 +1338,8 @@ export default function SystemConfig() {
 
         <div style={{ flex: 1 }} />
 
+        <AdminNotificationDropdown />
+
         {/* Dark Mode */}
         <button
           id="dark-mode-toggle"
@@ -1399,7 +1402,7 @@ export default function SystemConfig() {
           display: "flex", alignItems: "center", justifyContent: "center",
           color: "white", fontWeight: 700, fontSize: "13px", cursor: "pointer",
           flexShrink: 0,
-        }}>SG</div>
+        }}>{user?.name?.split(" ").map(n => n[0]).join("").toUpperCase() || "A"}</div>
       </nav>
 
       <div style={{ display: "flex", minHeight: `calc(100vh - ${T.navHeight})` }}>

@@ -5,9 +5,10 @@ import {
   Bell, Trash2, CheckCheck, RefreshCw, X,
   Users, Briefcase, Calendar, Trophy, Megaphone,
   Clock, MessageCircle, GitMerge, Zap, ArrowRight,
-  Eye, EyeOff, Star, TrendingUp
+  Eye, EyeOff, Star, TrendingUp, ShieldAlert, UserPlus, Settings
 } from "lucide-react";
 import { useNotifications } from "@/context/NotificationContext";
+import { useProfile } from "@/lib/useProfile";
 import Link from "next/link";
 import Sidebar from "@/components/dashboard/Sidebar";
 
@@ -24,6 +25,22 @@ const CATEGORY_CONFIG = {
   achievement:  { icon: Trophy,        label: "Achievement",   bg: "bg-yellow-500",  soft: "bg-yellow-50",  text: "text-yellow-600",  border: "border-yellow-200", ring: "ring-yellow-200" },
   announcement: { icon: Megaphone,     label: "Announcement",  bg: "bg-red-500",     soft: "bg-red-50",     text: "text-red-600",     border: "border-red-200",    ring: "ring-red-200"    },
   reminder:     { icon: Clock,         label: "Reminder",      bg: "bg-slate-500",   soft: "bg-slate-50",   text: "text-slate-600",   border: "border-slate-200",  ring: "ring-slate-200"  },
+};
+
+const ADMIN_CATEGORY_CONFIG = {
+  Reports: { icon: ShieldAlert, label: "Reports", bg: "bg-red-500",    soft: "bg-red-50",     text: "text-red-600",     border: "border-red-200",    ring: "ring-red-200"    },
+  Users:   { icon: Users,       label: "Users",   bg: "bg-blue-500",   soft: "bg-blue-50",    text: "text-blue-600",    border: "border-blue-200",   ring: "ring-blue-200"   },
+  Groups:  { icon: UserPlus,    label: "Groups",  bg: "bg-emerald-500",soft: "bg-emerald-50", text: "text-emerald-600", border: "border-emerald-200",ring: "ring-emerald-200" },
+  System:  { icon: Settings,    label: "System",  bg: "bg-slate-500",  soft: "bg-slate-50",   text: "text-slate-600",   border: "border-slate-200",  ring: "ring-slate-200"  },
+};
+
+const ADMIN_TYPE_MAP = {
+  user_registered: "Users",
+  report_pending:  "Reports",
+  user_flagged:    "Reports",
+  group_created:   "Groups",
+  system_config:   "System",
+  test:            "System",
 };
 
 const PRIORITY_CONFIG = {
@@ -78,11 +95,13 @@ function avatarColor(id = "") {
 // NOTIFICATION CARD
 // ─────────────────────────────────────────────────────────────
 
-const NotifCard = ({ notif, onRead, onUnread, onDelete, isNew }) => {
-  const cat   = CATEGORY_CONFIG[notif.category] || CATEGORY_CONFIG.reminder;
-  const pri   = PRIORITY_CONFIG[notif.priority] || PRIORITY_CONFIG.medium;
-  const Icon  = cat.icon;
-  const unread = !notif.read;
+const NotifCard = ({ notif, onRead, onUnread, onDelete, isNew, isAdmin }) => {
+  const adminCat = isAdmin ? ADMIN_TYPE_MAP[notif.type] : null;
+  const config = isAdmin ? ADMIN_CATEGORY_CONFIG : CATEGORY_CONFIG;
+  const cat = config[adminCat || notif.category] || config.reminder || ADMIN_CATEGORY_CONFIG.System;
+  const pri = PRIORITY_CONFIG[notif.priority] || PRIORITY_CONFIG.medium;
+  const Icon = cat.icon;
+  const unread = !notif.read && !notif.isRead; // Handle both read and isRead field names
 
   const senderName    = notif.sender?.name || "BizCircle";
   const senderInitials = getInitials(senderName);
@@ -99,7 +118,10 @@ const NotifCard = ({ notif, onRead, onUnread, onDelete, isNew }) => {
         }
         ${isNew ? "ring-2 ring-blue-400 ring-offset-1" : ""}
       `}
-      onClick={() => unread && onRead(notif._id)}
+      onClick={() => {
+        if (unread) onRead(notif._id);
+        if (isAdmin) console.log("Admin clicked notification:", notif);
+      }}
     >
       {/* Priority bar on left edge */}
       <div className={`absolute left-0 top-4 bottom-4 w-1 rounded-r-full ${pri.bar} opacity-${unread ? "100" : "30"}`} />
@@ -231,11 +253,35 @@ const StatCard = ({ icon: Icon, label, value, sub, active, onClick, colorClass }
 // EMPTY STATE
 // ─────────────────────────────────────────────────────────────
 
-const EmptyState = ({ filter }) => {
+const EmptyState = ({ filter, isAdmin }) => {
   const states = {
-    all:    { icon: Bell, title: "You're all caught up!", body: "No notifications yet. Stay active in your circles to see updates here.", cta: "Explore Circles", href: "/dashboard/discover" },
-    unread: { icon: CheckCheck, title: "Nothing unread!", body: "You've read everything. Great job staying on top of things.", cta: "See all activity", href: "/dashboard" },
-    high:   { icon: Zap, title: "No urgent notifications", body: "You have no high-priority items right now. Everything's smooth.", cta: "Check opportunities", href: "/dashboard" },
+    all: { 
+      icon: Bell, 
+      title: "You're all caught up!", 
+      body: isAdmin 
+        ? "No system alerts at the moment. Your platform is running smoothly." 
+        : "No notifications yet. Stay active in your circles to see updates here.", 
+      cta: isAdmin ? "Admin Dashboard" : "Explore Circles", 
+      href: isAdmin ? "/admin" : "/dashboard/discover" 
+    },
+    unread: { 
+      icon: CheckCheck, 
+      title: "Nothing unread!", 
+      body: isAdmin
+        ? "You've reviewed all pending alerts. Great job keeping the platform safe."
+        : "You've read everything. Great job staying on top of things.", 
+      cta: isAdmin ? "Manage Users" : "See all activity", 
+      href: isAdmin ? "/admin/moderation" : "/dashboard" 
+    },
+    high: { 
+      icon: Zap, 
+      title: "No urgent alerts", 
+      body: isAdmin
+        ? "There are no high-priority reports or system errors requiring immediate action."
+        : "You have no high-priority items right now. Everything's smooth.", 
+      cta: isAdmin ? "System Config" : "Check opportunities", 
+      href: isAdmin ? "/admin/system-config" : "/dashboard" 
+    },
   };
   const s = states[filter] || states.all;
   const Icon = s.icon;
@@ -286,6 +332,9 @@ export default function NotificationsPage() {
     markRead, markUnread, markAllRead,
     deleteNotif, clearAll, refresh,
   } = useNotifications();
+  const { user } = useProfile();
+  const isAdmin = user?.role?.toLowerCase() === 'admin';
+  const categoryConfig = isAdmin ? ADMIN_CATEGORY_CONFIG : CATEGORY_CONFIG;
 
   const [activeFilter, setActiveFilter]     = useState("all");
   const [activeCategory, setActiveCategory] = useState("all");
@@ -318,9 +367,10 @@ export default function NotificationsPage() {
   // Filtered list
   const filtered = useMemo(() => {
     return notifications.filter((n) => {
-      if (activeFilter === "unread" && n.read) return false;
+      if (activeFilter === "unread" && (n.read || n.isRead)) return false;
       if (activeFilter === "high"   && n.priority !== "high") return false;
-      if (activeCategory !== "all"  && n.category !== activeCategory) return false;
+      const cat = isAdmin ? ADMIN_TYPE_MAP[n.type] : n.category;
+      if (activeCategory !== "all"  && cat !== activeCategory) return false;
       return true;
     });
   }, [notifications, activeFilter, activeCategory]);
@@ -339,8 +389,12 @@ export default function NotificationsPage() {
 
   // Category counts for pills
   const catCounts = useMemo(() =>
-    notifications.reduce((acc, n) => { acc[n.category] = (acc[n.category] || 0) + 1; return acc; }, {}),
-    [notifications]
+    notifications.reduce((acc, n) => { 
+      const cat = isAdmin ? ADMIN_TYPE_MAP[n.type] : n.category;
+      acc[cat] = (acc[cat] || 0) + 1; 
+      return acc; 
+    }, {}),
+    [notifications, isAdmin]
   );
 
   const activeCats = Object.keys(catCounts);
@@ -359,10 +413,10 @@ export default function NotificationsPage() {
                 <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-blue-600 to-blue-400 flex items-center justify-center shadow-md shadow-blue-200">
                   <Bell size={18} className="text-white" />
                 </div>
-                <h1 className="text-3xl font-bold text-slate-900">Notifications</h1>
+              <h1 className="text-3xl font-bold text-slate-900">{isAdmin ? "Admin Notifications" : "Notifications"}</h1>
               </div>
               <p className="text-slate-500 text-sm ml-12">
-                Stay updated on your connections, opportunities, and rewards
+                {isAdmin ? "Monitor system activity, user reports, and platform updates" : "Stay updated on your connections, opportunities, and rewards"}
               </p>
             </div>
 
@@ -427,7 +481,8 @@ export default function NotificationsPage() {
           </button>
 
           {activeCats.map((cat) => {
-            const cfg      = CATEGORY_CONFIG[cat];
+            const cfg      = categoryConfig[cat];
+            if (!cfg) return null;
             const Icon     = cfg.icon;
             const isActive = activeCategory === cat;
             return (
@@ -466,7 +521,7 @@ export default function NotificationsPage() {
             {[...Array(5)].map((_, i) => <SkeletonCard key={i} />)}
           </div>
         ) : filtered.length === 0 ? (
-          <EmptyState filter={activeFilter} />
+          <EmptyState filter={activeFilter} isAdmin={isAdmin} />
         ) : (
           <div>
             {grouped.map(({ label, items }) => (
@@ -481,6 +536,7 @@ export default function NotificationsPage() {
                       onUnread={markUnread}
                       onDelete={deleteNotif}
                       isNew={newIds.has(n._id)}
+                      isAdmin={isAdmin}
                     />
                   ))}
                 </div>
