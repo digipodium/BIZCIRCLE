@@ -74,11 +74,13 @@ router.post('/', auth, async (req, res) => {
             memberCount: 1,
         });
 
-        // Set primaryDomain on creator if not already set
-        await User.findByIdAndUpdate(req.user.id, {
-            $push: { circles: circle._id },
-            $setOnInsert: { primaryDomain: domain },
-        });
+        // Update user: add circle and set primaryDomain if not already set
+        const user = await User.findById(req.user.id);
+        const userUpdates = { $push: { circles: circle._id } };
+        if (!user.primaryDomain) {
+            userUpdates.primaryDomain = domain;
+        }
+        await User.findByIdAndUpdate(req.user.id, userUpdates);
 
         res.status(201).json(circle);
     } catch (err) {

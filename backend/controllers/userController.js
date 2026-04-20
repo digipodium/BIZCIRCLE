@@ -1,9 +1,12 @@
 const User = require('../models/userModel');
 const GroupMember = require('../models/groupMemberModel');
 const Group = require('../models/groupModel');
+const Activity = require('../models/activityModel');
+const mongoose = require('mongoose');
 const Circle = require('../models/circleModel');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
+const { createNotification } = require('./notificationController');
 const { OAuth2Client } = require('google-auth-library');
 
 const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
@@ -156,7 +159,7 @@ const getUserProfile = async (req, res) => {
     // Fetch joined groups from the GroupMember system
     const memberships = await GroupMember.find({ user: req.user.id, status: 'Approved' })
       .populate('group', 'name domain location description icon color');
-    
+
     const joinedGroups = memberships
       .map(m => m.group)
       .filter(g => g !== null);
@@ -189,7 +192,7 @@ const updateUserProfile = async (req, res) => {
       { $set: updates },
       { new: true, runValidators: true }
     ).select('-password')
-     .populate('circles', 'name domain location members');
+      .populate('circles', 'name domain location members');
 
     if (!user) {
       return res.status(404).json({ message: 'User not found' });
@@ -198,7 +201,7 @@ const updateUserProfile = async (req, res) => {
     // Fetch joined groups from the GroupMember system
     const memberships = await GroupMember.find({ user: req.user.id, status: 'Approved' })
       .populate('group', 'name domain location description icon color');
-    
+
     const joinedGroups = memberships
       .map(m => m.group)
       .filter(g => g !== null);
@@ -214,7 +217,7 @@ const updateUserProfile = async (req, res) => {
 const updatePoints = async (req, res) => {
   try {
     const { amount } = req.body;
-    
+
     if (amount === undefined) {
       return res.status(400).json({ message: 'Amount is required' });
     }
@@ -256,62 +259,119 @@ const uploadAvatar = async (req, res) => {
   }
 };
 
-const getUserAnalytics = async (req, res) => {
+// GET /user/:id  (requires auth middleware)
+const getPublicProfile = async (req, res) => {
   try {
-    const Activity = require('../models/activityModel');
-    const today = new Date();
-    today.setHours(23, 59, 59, 999);
-    
-    const sevenDaysAgo = new Date(today);
-    sevenDaysAgo.setDate(today.getDate() - 6);
-    sevenDaysAgo.setHours(0, 0, 0, 0);
+    const user = await User.findById(req.params.id)
+      .select('-password -email -phone') // Hide sensitive details
+      .populate('circles', 'name domain location icon');
 
-    const activities = await Activity.find({
-      userId: req.user.id,
-      createdAt: { $gte: sevenDaysAgo, $lte: today }
-    });
-
-    const dailyData = {};
-    // Initialize last 7 days
-    for (let i = 0; i < 7; i++) {
-      const d = new Date(sevenDaysAgo);
-      d.setDate(sevenDaysAgo.getDate() + i);
-      const dateStr = d.toISOString().split('T')[0];
-      dailyData[dateStr] = 0;
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
     }
 
-    activities.forEach(act => {
-      const dateStr = act.createdAt.toISOString().split('T')[0];
-      if (dailyData[dateStr] !== undefined) {
-        dailyData[dateStr]++;
-      }
-    });
-
-    const results = Object.keys(dailyData).sort().map(date => ({
-      date,
-      count: dailyData[date]
-    }));
-
-    res.json(results);
+    res.json(user);
   } catch (err) {
-    console.error('Get analytics error:', err);
+    console.error('Get public profile error:', err);
     res.status(500).json({ message: 'Server error' });
   }
 };
 
-const getAllUsers = async (req, res) => {
+// POST /user/connect/:id  (requires auth middleware)
+const connectUser = async (req, res) => {
   try {
-    const { search } = req.query;
-    let query = { _id: { $ne: req.user.id } };
+    const targetId = req.params.id;
+    const currentUserId = req.user.id;
 
-    if (search) {
-      query.$or = [
-        { name: { $regex: search, $options: 'i' } },
-        { headline: { $regex: search, $options: 'i' } }
-      ];
+    if (targetId === currentUserId) {
+      return res.status(400).json({ message: "You cannot connect with yourself" });
     }
 
-    const users = await User.find(query).select('name email headline profilePicture');
+    const currentUser = await User.findById(currentUserId);
+    const targetUser = await User.findById(targetId);
+
+    if (!targetUser) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    // Check if already connected
+    if (currentUser.connections.includes(targetId)) {
+      return res.status(400).json({ message: "Already connected" });
+    }
+
+    // Add to current user's connections
+    currentUser.connections.push(targetId);
+    // Add to target user's connections (mutual connection)
+    targetUser.connections.push(currentUserId);
+
+    await currentUser.save();
+    await targetUser.save();
+
+    // Notify target user
+    const io = req.app.get('io');
+    await createNotification(io, {
+      userId: targetId,
+      category: 'connection',
+      type: 'connection_request', // or 'new_connection'
+      message: `${currentUser.name} has connected with you!`,
+      priority: 'medium'
+    });
+
+    res.json({ message: "Connected successfully", connectionsCount: currentUser.connections.length });
+  } catch (err) {
+    console.error('Connect user error:', err);
+    res.status(500).json({ message: 'Server error' });
+  }
+};
+
+// GET /user/analytics
+const getUserAnalytics = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const sevenDaysAgo = new Date();
+    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+
+    // Aggregate counts by day
+    const activities = await Activity.aggregate([
+      {
+        $match: {
+          userId: new mongoose.Types.ObjectId(userId),
+          createdAt: { $gte: sevenDaysAgo }
+        }
+      },
+      {
+        $group: {
+          _id: { $dateToString: { format: "%Y-%m-%d", date: "$createdAt" } },
+          count: { $sum: 1 }
+        }
+      },
+      { $sort: { "_id": 1 } }
+    ]);
+
+    // Ensure all 7 days are present in the result
+    const last7Days = [];
+    for (let i = 6; i >= 0; i--) {
+      const d = new Date();
+      d.setDate(d.getDate() - i);
+      const dateStr = d.toISOString().split('T')[0];
+      const found = activities.find(a => a._id === dateStr);
+      last7Days.push({
+        date: dateStr,
+        count: found ? found.count : 0
+      });
+    }
+
+    res.json(last7Days);
+  } catch (err) {
+    console.error('Analytics error:', err);
+    res.status(500).json({ message: 'Server error' });
+  }
+};
+
+// GET /user/all
+const getAllUsers = async (req, res) => {
+  try {
+    const users = await User.find({}).select('name profilePicture headline role organization');
     res.json(users);
   } catch (err) {
     console.error('Get all users error:', err);
@@ -319,4 +379,16 @@ const getAllUsers = async (req, res) => {
   }
 };
 
-module.exports = { signup, login, googleLogin, getUserProfile, updateUserProfile, updatePoints, uploadAvatar, getUserAnalytics, getAllUsers };
+module.exports = {
+  signup,
+  login,
+  googleLogin,
+  getUserProfile,
+  updateUserProfile,
+  updatePoints,
+  uploadAvatar,
+  getPublicProfile,
+  connectUser,
+  getUserAnalytics,
+  getAllUsers
+};

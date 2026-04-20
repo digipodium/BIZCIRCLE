@@ -6,7 +6,32 @@ import { Bell, X, Video, Calendar, ExternalLink } from "lucide-react";
 
 export default function MeetingReminder() {
   const [activeReminders, setActiveReminders] = useState([]);
-  const [permission, setPermission] = useState("default");
+  const [permission, setPermission] = useState(() => {
+    if (typeof window !== "undefined") {
+      return Notification.permission;
+    }
+    return "default";
+  });
+
+  const triggerReminder = (meeting) => {
+    // 1. Browser Notification
+    if (typeof window !== "undefined" && Notification.permission === "granted") {
+      new Notification("Upcoming Meeting: " + meeting.title, {
+        body: `Starting in 5 minutes! Click to join.`,
+        icon: "/logo.png" // assuming a logo exists
+      });
+    }
+
+    // 2. In-App Toast
+    setActiveReminders(prev => {
+      if (prev.find(r => r._id === meeting._id)) return prev;
+      return [...prev, meeting];
+    });
+  };
+
+  const removeReminder = (id) => {
+    setActiveReminders(prev => prev.filter(r => r._id !== id));
+  };
 
   const triggerReminder = (meeting) => {
     // 1. Browser Notification

@@ -5,9 +5,10 @@ import {
   Bell, Trash2, CheckCheck, RefreshCw, X,
   Users, Briefcase, Calendar, Trophy, Megaphone,
   Clock, MessageCircle, GitMerge, Zap, ArrowRight,
-  Eye, EyeOff, Star, TrendingUp
+  Eye, EyeOff, Star, TrendingUp, ShieldAlert, UserPlus, Settings
 } from "lucide-react";
 import { useNotifications } from "@/context/NotificationContext";
+import { useProfile } from "@/lib/useProfile";
 import Link from "next/link";
 import Sidebar from "@/components/dashboard/Sidebar";
 
@@ -24,6 +25,22 @@ const CATEGORY_CONFIG = {
   achievement:  { icon: Trophy,        label: "Achievement",   bg: "bg-yellow-500",  soft: "bg-yellow-50",  text: "text-yellow-600",  border: "border-yellow-200", ring: "ring-yellow-200" },
   announcement: { icon: Megaphone,     label: "Announcement",  bg: "bg-red-500",     soft: "bg-red-50",     text: "text-red-600",     border: "border-red-200",    ring: "ring-red-200"    },
   reminder:     { icon: Clock,         label: "Reminder",      bg: "bg-slate-500",   soft: "bg-slate-50",   text: "text-slate-600",   border: "border-slate-200",  ring: "ring-slate-200"  },
+};
+
+const ADMIN_CATEGORY_CONFIG = {
+  Reports: { icon: ShieldAlert, label: "Reports", bg: "bg-red-500",    soft: "bg-red-50",     text: "text-red-600",     border: "border-red-200",    ring: "ring-red-200"    },
+  Users:   { icon: Users,       label: "Users",   bg: "bg-blue-500",   soft: "bg-blue-50",    text: "text-blue-600",    border: "border-blue-200",   ring: "ring-blue-200"   },
+  Groups:  { icon: UserPlus,    label: "Groups",  bg: "bg-emerald-500",soft: "bg-emerald-50", text: "text-emerald-600", border: "border-emerald-200",ring: "ring-emerald-200" },
+  System:  { icon: Settings,    label: "System",  bg: "bg-slate-500",  soft: "bg-slate-50",   text: "text-slate-600",   border: "border-slate-200",  ring: "ring-slate-200"  },
+};
+
+const ADMIN_TYPE_MAP = {
+  user_registered: "Users",
+  report_pending:  "Reports",
+  user_flagged:    "Reports",
+  group_created:   "Groups",
+  system_config:   "System",
+  test:            "System",
 };
 
 const PRIORITY_CONFIG = {
@@ -78,11 +95,13 @@ function avatarColor(id = "") {
 // NOTIFICATION CARD
 // ─────────────────────────────────────────────────────────────
 
-const NotifCard = ({ notif, onRead, onUnread, onDelete, isNew }) => {
-  const cat   = CATEGORY_CONFIG[notif.category] || CATEGORY_CONFIG.reminder;
-  const pri   = PRIORITY_CONFIG[notif.priority] || PRIORITY_CONFIG.medium;
-  const Icon  = cat.icon;
-  const unread = !notif.isRead;
+const NotifCard = ({ notif, onRead, onUnread, onDelete, isNew, isAdmin }) => {
+  const adminCat = isAdmin ? ADMIN_TYPE_MAP[notif.type] : null;
+  const config = isAdmin ? ADMIN_CATEGORY_CONFIG : CATEGORY_CONFIG;
+  const cat = config[adminCat || notif.category] || config.reminder || ADMIN_CATEGORY_CONFIG.System;
+  const pri = PRIORITY_CONFIG[notif.priority] || PRIORITY_CONFIG.medium;
+  const Icon = cat.icon;
+  const unread = !notif.read && !notif.isRead; // Handle both read and isRead field names
 
   const senderName    = notif.sender?.name || "BizCircle";
   const senderInitials = getInitials(senderName);
@@ -99,7 +118,10 @@ const NotifCard = ({ notif, onRead, onUnread, onDelete, isNew }) => {
         }
         ${isNew ? "ring-2 ring-blue-400 ring-offset-1" : ""}
       `}
-      onClick={() => unread && onRead(notif._id)}
+      onClick={() => {
+        if (unread) onRead(notif._id);
+        if (isAdmin) console.log("Admin clicked notification:", notif);
+      }}
     >
       {/* Priority bar on left edge */}
       <div className={`absolute left-0 top-4 bottom-4 w-1 rounded-r-full ${pri.bar} opacity-${unread ? "100" : "30"}`} />
@@ -200,25 +222,30 @@ const GroupHeader = ({ label, count }) => (
 // STAT CARD (clickable filter)
 // ─────────────────────────────────────────────────────────────
 
-const StatCard = ({ icon: Icon, label, value, sub, gradient, active, onClick }) => (
+const StatCard = ({ icon: Icon, label, value, sub, active, onClick, colorClass }) => (
   <button
     onClick={onClick}
     className={`
-      group w-full text-left p-4 rounded-2xl border transition-all duration-200
-      hover:shadow-lg hover:-translate-y-0.5
+      group w-full flex items-center justify-between p-5 rounded-2xl border transition-all duration-200
+      hover:shadow-md hover:-translate-y-0.5
       ${active
-        ? "border-transparent shadow-lg shadow-blue-100 scale-[1.02]"
+        ? `bg-white border-${colorClass}-500 shadow-sm ring-1 ring-${colorClass}-500`
         : "bg-white border-slate-100 hover:border-slate-200"
       }
     `}
-    style={active ? { background: gradient } : {}}
   >
-    <div className={`w-9 h-9 rounded-xl flex items-center justify-center mb-3 transition-all ${active ? "bg-white/20" : "bg-slate-100 group-hover:bg-slate-200"}`}>
-      <Icon size={16} className={active ? "text-white" : "text-slate-600"} />
+    <div className="flex items-center gap-4">
+      <div className={`w-12 h-12 rounded-xl flex items-center justify-center shrink-0 transition-all ${active ? `bg-${colorClass}-50` : "bg-slate-50 group-hover:bg-slate-100"}`}>
+        <Icon size={20} className={active ? `text-${colorClass}-600` : "text-slate-500"} />
+      </div>
+      <div className="text-left">
+        <p className={`text-sm font-bold ${active ? `text-${colorClass}-700` : "text-slate-700"}`}>{label}</p>
+        {sub && <p className={`text-[11px] font-medium mt-0.5 ${active ? `text-${colorClass}-500/80` : "text-slate-400"}`}>{sub}</p>}
+      </div>
     </div>
-    <p className={`text-2xl font-black leading-none ${active ? "text-white" : "text-slate-900"}`}>{value}</p>
-    <p className={`text-[11px] font-semibold mt-1 ${active ? "text-white/80" : "text-slate-500"}`}>{label}</p>
-    {sub && <p className={`text-[10px] mt-0.5 ${active ? "text-white/60" : "text-slate-400"}`}>{sub}</p>}
+    <div className={`text-2xl font-black ${active ? `text-${colorClass}-600` : "text-slate-800"}`}>
+      {value}
+    </div>
   </button>
 );
 
@@ -226,30 +253,51 @@ const StatCard = ({ icon: Icon, label, value, sub, gradient, active, onClick }) 
 // EMPTY STATE
 // ─────────────────────────────────────────────────────────────
 
-const EmptyState = ({ filter }) => {
+const EmptyState = ({ filter, isAdmin }) => {
   const states = {
-    all:    { emoji: "🎉", title: "You're all caught up!", body: "No notifications yet. Stay active in your circles to see updates here.", cta: "Explore Circles", href: "/dashboard/discover" },
-    unread: { emoji: "✅", title: "Nothing unread!", body: "You've read everything. Great job staying on top of things.", cta: "See all activity", href: "/dashboard" },
-    high:   { emoji: "🛡️", title: "No urgent notifications", body: "You have no high-priority items right now. Everything's smooth.", cta: "Check opportunities", href: "/dashboard" },
+    all: { 
+      icon: Bell, 
+      title: "You're all caught up!", 
+      body: isAdmin 
+        ? "No system alerts at the moment. Your platform is running smoothly." 
+        : "No notifications yet. Stay active in your circles to see updates here.", 
+      cta: isAdmin ? "Admin Dashboard" : "Explore Circles", 
+      href: isAdmin ? "/admin" : "/dashboard/discover" 
+    },
+    unread: { 
+      icon: CheckCheck, 
+      title: "Nothing unread!", 
+      body: isAdmin
+        ? "You've reviewed all pending alerts. Great job keeping the platform safe."
+        : "You've read everything. Great job staying on top of things.", 
+      cta: isAdmin ? "Manage Users" : "See all activity", 
+      href: isAdmin ? "/admin/moderation" : "/dashboard" 
+    },
+    high: { 
+      icon: Zap, 
+      title: "No urgent alerts", 
+      body: isAdmin
+        ? "There are no high-priority reports or system errors requiring immediate action."
+        : "You have no high-priority items right now. Everything's smooth.", 
+      cta: isAdmin ? "System Config" : "Check opportunities", 
+      href: isAdmin ? "/admin/system-config" : "/dashboard" 
+    },
   };
   const s = states[filter] || states.all;
+  const Icon = s.icon;
 
   return (
-    <div className="flex flex-col items-center justify-center py-20 px-8 text-center">
-      {/* Animated ring */}
-      <div className="relative mb-6">
-        <div className="w-24 h-24 rounded-full bg-gradient-to-br from-blue-50 to-blue-100 flex items-center justify-center animate-pulse">
-          <span className="text-5xl">{s.emoji}</span>
-        </div>
-        <div className="absolute inset-0 rounded-full ring-2 ring-blue-200 ring-offset-4 animate-ping opacity-20" />
+    <div className="flex flex-col items-center justify-center py-24 px-8 text-center bg-white rounded-3xl border border-slate-100 shadow-sm mt-4">
+      <div className="w-16 h-16 rounded-2xl bg-blue-50 flex items-center justify-center mb-5">
+        <Icon size={28} className="text-blue-400" />
       </div>
       <h3 className="text-xl font-bold text-slate-800 mb-2">{s.title}</h3>
-      <p className="text-slate-500 text-sm max-w-xs leading-relaxed mb-6">{s.body}</p>
+      <p className="text-slate-500 text-sm max-w-sm leading-relaxed mb-8">{s.body}</p>
       <Link
         href={s.href}
-        className="flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-blue-600 to-blue-500 text-white text-sm font-semibold rounded-xl shadow-md shadow-blue-200 hover:shadow-lg hover:shadow-blue-300 hover:-translate-y-0.5 transition-all"
+        className="flex items-center gap-2 px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded-xl shadow-md shadow-blue-200 active:scale-95 transition-all"
       >
-        {s.cta} <ArrowRight size={14} />
+        {s.cta} <ArrowRight size={16} />
       </Link>
     </div>
   );
@@ -284,6 +332,9 @@ export default function NotificationsPage() {
     markRead, markUnread, markAllRead,
     deleteNotif, clearAll, refresh,
   } = useNotifications();
+  const { user } = useProfile();
+  const isAdmin = user?.role?.toLowerCase() === 'admin';
+  const categoryConfig = isAdmin ? ADMIN_CATEGORY_CONFIG : CATEGORY_CONFIG;
 
   const [activeFilter, setActiveFilter]     = useState("all");
   const [activeCategory, setActiveCategory] = useState("all");
@@ -293,35 +344,35 @@ export default function NotificationsPage() {
   const statCards = [
     {
       icon: Bell, label: "Total",   value: notifications.length,
-      sub: "all time",             gradient: "linear-gradient(135deg,#6366f1,#4f46e5)",
+      sub: "All time",             colorClass: "blue",
       filter: "all",
     },
     {
       icon: Star, label: "Unread",  value: unreadCount,
-      sub: "need attention",        gradient: "linear-gradient(135deg,#3b82f6,#1d4ed8)",
+      sub: "Needs attention",      colorClass: "amber",
       filter: "unread",
     },
     {
       icon: Zap,  label: "Urgent",  value: notifications.filter(n => n.priority === "high").length,
-      sub: "high priority",         gradient: "linear-gradient(135deg,#ef4444,#b91c1c)",
+      sub: "High priority",        colorClass: "red",
       filter: "high",
     },
     {
-      icon: TrendingUp, label: "Read", value: notifications.length - unreadCount,
-      sub: "completed",             gradient: "linear-gradient(135deg,#10b981,#059669)",
-      filter: "all",  // clicking read → show all
+      icon: CheckCheck, label: "Read", value: notifications.length - unreadCount,
+      sub: "Completed",             colorClass: "emerald",
+      filter: "all",
     },
   ];
 
-  // Filtered list
   const filtered = useMemo(() => {
     return notifications.filter((n) => {
-      if (activeFilter === "unread" && n.isRead) return false;
+      if (activeFilter === "unread" && (n.read || n.isRead)) return false;
       if (activeFilter === "high"   && n.priority !== "high") return false;
-      if (activeCategory !== "all"  && n.category !== activeCategory) return false;
+      const cat = isAdmin ? ADMIN_TYPE_MAP[n.type] : n.category;
+      if (activeCategory !== "all"  && cat !== activeCategory) return false;
       return true;
     });
-  }, [notifications, activeFilter, activeCategory]);
+  }, [notifications, activeFilter, activeCategory, isAdmin]);
 
   // Group by date
   const grouped = useMemo(() => {
@@ -337,8 +388,12 @@ export default function NotificationsPage() {
 
   // Category counts for pills
   const catCounts = useMemo(() =>
-    notifications.reduce((acc, n) => { acc[n.category] = (acc[n.category] || 0) + 1; return acc; }, {}),
-    [notifications]
+    notifications.reduce((acc, n) => { 
+      const cat = isAdmin ? ADMIN_TYPE_MAP[n.type] : n.category;
+      acc[cat] = (acc[cat] || 0) + 1; 
+      return acc; 
+    }, {}),
+    [notifications, isAdmin]
   );
 
   const activeCats = Object.keys(catCounts);
@@ -347,74 +402,68 @@ export default function NotificationsPage() {
     <div className="flex flex-col lg:flex-row min-h-screen bg-[#F8FAFC]">
       <Sidebar />
       
-      <main className="flex-1 overflow-y-auto">
-        {/* ── Sticky Header ─────────────────────────────────── */}
-        <div className="sticky top-0 z-30 bg-white/90 backdrop-blur-xl border-b border-slate-100 shadow-sm w-full">
-          <div className="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between gap-4">
-          {/* Left */}
-          <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-blue-600 to-indigo-600 flex items-center justify-center shadow-lg shadow-blue-200">
-              <Bell className="text-white w-4 h-4" />
-            </div>
+      <main className="flex-1 p-6 lg:p-10 overflow-y-auto">
+        <div className="max-w-5xl mx-auto">
+
+          {/* ── Page Header ─────────────────────────────────────────── */}
+          <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-6 mb-8 mt-12 lg:mt-0">
             <div>
-              <h1 className="text-[15px] font-bold text-slate-900 leading-none">Notifications</h1>
-              <p className="text-[11px] text-slate-400 mt-0.5">
-                {unreadCount > 0 ? (
-                  <span className="text-blue-600 font-semibold">{unreadCount} new</span>
-                ) : "All caught up"}
+              <div className="flex items-center gap-3 mb-1">
+                <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-blue-600 to-blue-400 flex items-center justify-center shadow-md shadow-blue-200">
+                  <Bell size={18} className="text-white" />
+                </div>
+              <h1 className="text-3xl font-bold text-slate-900">{isAdmin ? "Admin Notifications" : "Notifications"}</h1>
+              </div>
+              <p className="text-slate-500 text-sm ml-12">
+                {isAdmin ? "Monitor system activity, user reports, and platform updates" : "Stay updated on your connections, opportunities, and rewards"}
               </p>
             </div>
-          </div>
 
-          {/* Right actions */}
-          <div className="flex items-center gap-2">
-            <button
-              onClick={refresh}
-              className="p-2 rounded-xl text-slate-400 hover:text-blue-600 hover:bg-blue-50 border border-slate-200 hover:border-blue-200 transition-all"
-              title="Refresh"
-            >
-              <RefreshCw size={14} />
-            </button>
-            {unreadCount > 0 && (
+            {/* Actions */}
+            <div className="flex items-center gap-2 sm:ml-auto">
               <button
-                onClick={markAllRead}
-                className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-blue-600 text-white text-xs font-semibold hover:bg-blue-700 active:scale-95 transition-all shadow-sm shadow-blue-200"
+                onClick={refresh}
+                className="p-2.5 rounded-xl text-slate-400 hover:text-blue-600 hover:bg-blue-50 bg-white border border-slate-200 transition-all shadow-sm"
+                title="Refresh"
               >
-                <CheckCheck size={13} />
-                Mark all read
+                <RefreshCw size={16} />
               </button>
-            )}
-            {notifications.length > 0 && (
-              <button
-                onClick={clearAll}
-                className="flex items-center gap-1 px-3 py-2 rounded-xl border border-red-200 text-red-500 text-xs font-semibold hover:bg-red-50 active:scale-95 transition-all"
-              >
-                <Trash2 size={13} />
-                Clear
-              </button>
-            )}
+              {unreadCount > 0 && (
+                <button
+                  onClick={markAllRead}
+                  className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold transition-all shadow-md shadow-blue-200 active:scale-95"
+                >
+                  <CheckCheck size={16} />
+                  Mark all read
+                </button>
+              )}
+              {notifications.length > 0 && (
+                <button
+                  onClick={clearAll}
+                  className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-white border border-red-200 text-red-500 hover:bg-red-50 text-sm font-semibold transition-all shadow-sm active:scale-95"
+                >
+                  <Trash2 size={16} />
+                  Clear
+                </button>
+              )}
+            </div>
           </div>
+
+          {/* ── Stat Cards ───────────────────────────────────── */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+            {statCards.map((s) => (
+              <StatCard
+                key={s.label}
+                icon={s.icon}
+                label={s.label}
+                value={s.value}
+                sub={s.sub}
+                colorClass={s.colorClass}
+                active={activeFilter === s.filter && s.filter !== "all"}
+                onClick={() => setActiveFilter(activeFilter === s.filter ? "all" : s.filter)}
+              />
+            ))}
           </div>
-        </div>
-
-        {/* Main Content Area */}
-        <div className="max-w-6xl mx-auto px-6 py-8">
-
-        {/* ── Stat Cards ───────────────────────────────────── */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-7">
-          {statCards.map((s) => (
-            <StatCard
-              key={s.label}
-              icon={s.icon}
-              label={s.label}
-              value={s.value}
-              sub={s.sub}
-              gradient={s.gradient}
-              active={activeFilter === s.filter && s.filter !== "all"}
-              onClick={() => setActiveFilter(activeFilter === s.filter ? "all" : s.filter)}
-            />
-          ))}
-        </div>
 
         {/* ── Quick Filter Pills ───────────────────────────── */}
         <div className="flex flex-wrap gap-2 mb-5">
@@ -431,7 +480,8 @@ export default function NotificationsPage() {
           </button>
 
           {activeCats.map((cat) => {
-            const cfg      = CATEGORY_CONFIG[cat];
+            const cfg      = categoryConfig[cat];
+            if (!cfg) return null;
             const Icon     = cfg.icon;
             const isActive = activeCategory === cat;
             return (
@@ -470,7 +520,7 @@ export default function NotificationsPage() {
             {[...Array(5)].map((_, i) => <SkeletonCard key={i} />)}
           </div>
         ) : filtered.length === 0 ? (
-          <EmptyState filter={activeFilter} />
+          <EmptyState filter={activeFilter} isAdmin={isAdmin} />
         ) : (
           <div>
             {grouped.map(({ label, items }) => (
@@ -485,6 +535,7 @@ export default function NotificationsPage() {
                       onUnread={markUnread}
                       onDelete={deleteNotif}
                       isNew={newIds.has(n._id)}
+                      isAdmin={isAdmin}
                     />
                   ))}
                 </div>

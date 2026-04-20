@@ -17,9 +17,9 @@ export default function ProfileSidebar() {
   const totalJoined = (user?.circles?.length || 0) + (user?.joinedGroups?.length || 0);
 
   const stats = [
-    { label: "Circles Joined", value: loading ? "—" : totalJoined, icon: GitBranch, color: "text-blue-600" },
-    { label: "Connections", value: "—", icon: Users, color: "text-emerald-600" },
-    { label: "Referrals", value: "—", icon: Award, color: "text-amber-600" },
+    { label: "Circles Joined", value: user?.circles?.length ?? "—", icon: GitBranch, color: "text-blue-600" },
+    { label: "Connections", value: user?.connections?.length ?? 0, icon: Users, color: "text-emerald-600" },
+    { label: "Referrals", value: user?.referralsGiven ?? 0, icon: Award, color: "text-amber-600" },
   ];
 
   const quickLinks = [
@@ -35,8 +35,18 @@ export default function ProfileSidebar() {
         {/* Avatar Area */}
         <div className="flex justify-center -mt-14 mb-4">
           <div className="relative">
-            <div className="w-24 h-24 rounded-2xl bg-gradient-to-br from-blue-500 to-blue-700 flex items-center justify-center text-white text-3xl font-bold shadow-lg border-4 border-white">
-              {loading ? "..." : initials}
+            <div className="w-24 h-24 rounded-2xl bg-gradient-to-br from-blue-500 to-blue-700 flex items-center justify-center text-white text-3xl font-bold shadow-lg border-4 border-white overflow-hidden">
+              {loading ? (
+                "..."
+              ) : user?.profilePicture ? (
+                <img 
+                  src={user.profilePicture} 
+                  alt={user.name} 
+                  className="w-full h-full object-cover"
+                />
+              ) : (
+                initials
+              )}
             </div>
             <div className="absolute -bottom-1 -right-1 w-5 h-5 bg-emerald-500 rounded-full border-2 border-white" title="Online" />
           </div>

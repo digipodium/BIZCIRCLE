@@ -55,7 +55,7 @@ function timeAgo(date) {
 const DropdownRow = ({ notif, onRead, onDelete }) => {
   const cat   = CATEGORY_CONFIG[notif.category] || CATEGORY_CONFIG.reminder;
   const Icon  = cat.icon;
-  const unread = !notif.isRead;
+  const unread = !notif.read;   // field is `read` (not `isRead`) per Mongoose model
   const senderName = notif.sender?.name || "BizCircle";
 
   return (
@@ -113,7 +113,7 @@ const DropdownRow = ({ notif, onRead, onDelete }) => {
 // BELL BUTTON + DROPDOWN
 // ─────────────────────────────────────────────────────────────
 
-const NotificationBell = () => {
+const NotificationBell = ({ align = "right" }) => {
   const [open, setOpen]   = useState(false);
   const ref               = useRef(null);
   const { notifications, unreadCount, markRead, markAllRead, deleteNotif, loading } = useNotifications();
@@ -160,7 +160,7 @@ const NotificationBell = () => {
 
       {/* ── Dropdown ──────────────────────────────────────── */}
       {open && (
-        <div className="absolute right-0 top-[calc(100%+8px)] w-[360px] bg-white rounded-2xl shadow-2xl shadow-slate-200/80 border border-slate-100 z-50 overflow-hidden"
+        <div className={`absolute ${align === 'left' ? 'left-0' : 'right-0'} top-[calc(100%+8px)] w-[360px] bg-white rounded-2xl shadow-2xl shadow-slate-200/80 border border-slate-100 z-50 overflow-hidden`}
           style={{ animation: "dropIn 0.18s cubic-bezier(.2,.8,.2,1) both" }}>
 
           {/* Header */}

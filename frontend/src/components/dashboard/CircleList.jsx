@@ -16,7 +16,7 @@ const CircleCard = ({ _id, name, domain, location, members, isJoined, icon, colo
     
     setIsJoining(true);
     try {
-      const endpoint = type === 'group' ? `/api/groups/${_id}/join` : "/api/circles/join";
+      const endpoint = type === 'group' ? `/group/${_id}/join` : "/api/circles/join";
       const payload = type === 'group' ? {} : { circleId: _id };
       
       await api.post(endpoint, payload);

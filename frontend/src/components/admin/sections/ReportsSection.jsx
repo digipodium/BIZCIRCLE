@@ -57,7 +57,7 @@ export default function ReportsSection() {
                   {report.type} Violation: <span className="text-blue-600">{report.target}</span>
                 </h3>
                 <p className="text-slate-500 font-semibold text-sm mb-4">
-                  Reason: <span className="text-slate-700 italic">"{report.reason}"</span>
+                  Reason: <span className="text-slate-700 italic">&quot;{report.reason}&quot;</span>
                 </p>
                 <div className="flex items-center gap-4 text-xs font-bold text-slate-400 bg-slate-50 p-3 rounded-xl w-fit">
                   <div className="flex items-center gap-1.5">

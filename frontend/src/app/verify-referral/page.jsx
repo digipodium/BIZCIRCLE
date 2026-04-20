@@ -9,16 +9,12 @@ import Link from 'next/link';
 function VerifyContent() {
   const searchParams = useSearchParams();
   const token = searchParams.get('token');
-  const [status, setStatus] = useState('loading'); // loading, success, error
-  const [message, setMessage] = useState('');
+  const [status, setStatus] = useState(token ? 'loading' : 'error'); // loading, success, error
+  const [message, setMessage] = useState(token ? '' : 'Missing verification token.');
   const [referralData, setReferralData] = useState(null);
 
   useEffect(() => {
-    if (!token) {
-      setStatus('error');
-      setMessage('Missing verification token.');
-      return;
-    }
+    if (!token) return;
 
     const verifyToken = async () => {
       try {

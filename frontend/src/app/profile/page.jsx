@@ -1,6 +1,8 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
+import Sidebar from "@/components/dashboard/Sidebar";
 import ProfileSidebar from "@/components/ProfileSidebar";
 import ProfileTabs from "@/components/ProfileTabs";
 import Overview from "@/components/Overview";
@@ -11,8 +13,7 @@ import Activity from "@/components/Activity";
 import { useProfile } from "@/lib/useProfile";
 import { usePoints } from "@/context/PointsContext";
 import { Star } from "lucide-react";
-
-import Link from "next/link";
+import NotificationBell from "@/components/NotificationBell";
 
 function NavAvatar() {
   const { user } = useProfile();
@@ -20,8 +21,12 @@ function NavAvatar() {
     ? user.name.split(" ").map((n) => n[0]).join("").toUpperCase().slice(0, 2)
     : "?";
   return (
-    <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-blue-700 flex items-center justify-center text-white text-xs font-semibold cursor-pointer">
-      {initials}
+    <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-blue-700 flex items-center justify-center text-white text-xs font-semibold cursor-pointer overflow-hidden border border-white/20">
+      {user?.profilePicture ? (
+        <img src={user.profilePicture} alt={user.name} className="w-full h-full object-cover" />
+      ) : (
+        initials
+      )}
     </div>
   );
 }
@@ -49,8 +54,10 @@ export default function ProfilePage() {
   };
 
   return (
-    <main className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/30 to-slate-100 font-sans">
-      {/* Top Nav Bar */}
+    <div className="flex flex-col lg:flex-row min-h-screen bg-[#F8FAFC]">
+      <Sidebar />
+      <main className="flex-1 bg-gradient-to-br from-slate-50 via-blue-50/30 to-slate-100 font-sans overflow-y-auto relative">
+        {/* Top Nav Bar */}
       <nav className="sticky top-0 z-50 bg-white/80 backdrop-blur-md border-b border-slate-200/80 px-6 py-3 flex items-center justify-between shadow-sm">
         <div className="flex items-center gap-2">
           <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-600 to-blue-800 flex items-center justify-center">
@@ -65,8 +72,9 @@ export default function ProfilePage() {
             <Star size={13} className="text-amber-500 fill-amber-500 group-hover:scale-110 transition-transform" />
             <span className="text-amber-700 font-bold text-xs">{points}</span>
           </div>
-          <Link href="/dashboard" className="hidden sm:inline hover:text-blue-600 cursor-pointer transition-colors">Explore</Link>
-          <Link href="/profile" className="hidden sm:inline hover:text-blue-600 cursor-pointer transition-colors text-blue-600 font-medium border-b-2 border-blue-600 pb-0.5">Profile</Link>
+
+
+          <NotificationBell />
           <NavAvatar />
         </div>
       </nav>
@@ -113,6 +121,7 @@ export default function ProfilePage() {
           animation: fadeInUp 0.6s ease-out 0.1s both;
         }
       `}</style>
-    </main>
+      </main>
+    </div>
   );
 }

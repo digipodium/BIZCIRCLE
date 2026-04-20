@@ -88,7 +88,16 @@ const userSchema = new mongoose.Schema({
     default: 0,
   },
 
-  // BizPoints balance
+  // Content Moderation
+  warningCount: {
+    type: Number,
+    default: 0,
+  },
+  isBlocked: {
+    type: Boolean,
+    default: false,
+  },
+
   points: {
     type: Number,
     default: 0,

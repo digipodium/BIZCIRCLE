@@ -290,29 +290,22 @@ router.put('/:id/members/:memberId', auth, async (req, res) => {
                 meta: new Map([['groupName', group.name]]),
             });
             // Notification to the user whose request was approved
-            await createNotification({
-                io,
-                recipient: member.user._id,
-                sender: req.user.id,
+            await createNotification(io, {
+                userId: member.user._id,
                 category: 'connection',
                 type: 'connection_accepted',
                 message: `Your request to join "${group.name}" has been approved! Welcome aboard.`,
                 priority: 'high',
-                linkTo: `/groups/${group._id}`,
-                meta: { groupName: group.name },
             });
         }
 
         if (status === 'Banned' && member?.user) {
-            await createNotification({
-                io,
-                recipient: member.user._id,
+            await createNotification(io, {
+                userId: member.user._id,
                 category: 'announcement',
                 type: 'system_alert',
                 message: `You have been removed from the group "${group.name}".`,
                 priority: 'high',
-                linkTo: '/dashboard/discover',
-                meta: { groupName: group.name },
             });
         }
 

@@ -2,10 +2,12 @@
 
 import { useState, useEffect } from "react";
 import api from "../../lib/axios";
-import CreateGroupModal from "./CreateGroupModal";
+import { useProfile } from "../../lib/useProfile";
 import AdminLayout from "./layout/AdminLayout";
-
-// Section Components
+import AdminHeader from "./AdminHeader";
+import StatsSection from "./StatsSection";
+import CreateGroupModal from "./CreateGroupModal";
+// Sections
 import OverviewSection from "./sections/OverviewSection";
 import UserManagementSection from "./sections/UserManagementSection";
 import GroupManagementSection from "./sections/GroupManagementSection";
@@ -23,6 +25,7 @@ export default function AdminDashboard() {
   const [activeSection, setActiveSection] = useState("overview");
   const [toast, setToast] = useState(null);
   const [loading, setLoading] = useState(true);
+  const { user } = useProfile();
 
   useEffect(() => {
     fetchDashboardData();
@@ -36,7 +39,7 @@ export default function AdminDashboard() {
         showToast("Session expired. Please log in again.", "error");
         return;
       }
-      
+
       const res = await api.get('/group/admin/dashboard');
       setGroups(res.data.groups);
       setRequests(res.data.requests);
@@ -64,7 +67,7 @@ export default function AdminDashboard() {
       await api.put(`/group/${req.groupId}/members/${id}`, { status: 'Approved' });
       fetchDashboardData();
       showToast(`${req.userName} has been accepted into ${req.groupName}`, "success");
-    } catch(err) {
+    } catch (err) {
       showToast("Failed to accept request", "error");
     }
   };
@@ -76,7 +79,7 @@ export default function AdminDashboard() {
       await api.put(`/group/${req.groupId}/members/${id}`, { status: 'Banned' });
       fetchDashboardData();
       showToast(`${req.userName}'s request has been rejected`, "error");
-    } catch(err) {
+    } catch (err) {
       showToast("Failed to reject request", "error");
     }
   };
@@ -88,7 +91,7 @@ export default function AdminDashboard() {
         showToast("Session expired. Please log in again.", "error");
         return;
       }
-      
+
       await api.post('/group', {
         ...newGroup,
         isPrivate: true,
@@ -97,7 +100,7 @@ export default function AdminDashboard() {
       fetchDashboardData();
       setShowModal(false);
       showToast(`"${newGroup.name}" has been created successfully!`, "success");
-    } catch(err) {
+    } catch (err) {
       console.error('Create group error:', err);
       const errorMsg = err.response?.data?.message || err.message || "Failed to create group";
       showToast(errorMsg, "error");
@@ -113,11 +116,11 @@ export default function AdminDashboard() {
         return <UserManagementSection />;
       case "groups":
         return (
-          <GroupManagementSection 
-            groups={groups} 
-            requests={requests} 
-            onAccept={handleAccept} 
-            onReject={handleReject} 
+          <GroupManagementSection
+            groups={groups}
+            requests={requests}
+            onAccept={handleAccept}
+            onReject={handleReject}
           />
         );
       case "moderation":
@@ -175,16 +178,76 @@ export default function AdminDashboard() {
         <div className="animate-in fade-in duration-700">
           {renderSection()}
         </div>
+<<<<<<< HEAD
       )}
+=======
+      </nav>
 
-      {/* Create Group Modal */}
-      {showModal && (
-        <CreateGroupModal
-          currentGroupCount={groups.length}
-          onClose={() => setShowModal(false)}
-          onCreate={handleCreateGroup}
-        />
-      )}
-    </AdminLayout>
+      {/* Main Content */ }
+  <main style={{ maxWidth: "1200px", margin: "0 auto", padding: "36px 24px" }}>
+    {loading ? (
+      <div style={{ textAlign: "center", padding: "100px", color: "#6b7280" }}>
+        <div style={{
+          width: "40px",
+          height: "40px",
+          border: "3px solid #e5e7eb",
+          borderTop: "3px solid #2563eb",
+          borderRadius: "50%",
+          animation: "spin 1s linear infinite",
+          margin: "0 auto 20px"
+        }} />
+        <p>Loading dashboard...</p>
+      </div>
+    ) : (
+      <>
+        <div className="fade-up">
+          <AdminHeader
+            groupCount={groups.length}
+            maxGroups={3}
+            onCreateGroup={() => setShowModal(true)}
+          />
+        </div>
+
+
+        <div className="fade-up" style={{ animationDelay: "0.1s" }}>
+          <StatsSection
+            totalGroups={groups.length}
+            totalMembers={totalMembers}
+            pendingRequests={requests.length}
+          />
+        </div>
+
+        <div className="fade-up" style={{ animationDelay: "0.2s" }}>
+          <ConstraintBanner />
+        </div>
+
+        <div className="fade-up" style={{ animationDelay: "0.25s" }}>
+          <GroupsSection groups={groups} />
+        </div>
+
+        <div className="fade-up" style={{ animationDelay: "0.3s" }}>
+          <JoinRequestsSection
+            requests={requests}
+            onAccept={handleAccept}
+            onReject={handleReject}
+          />
+        </div>
+      </>
+    )
+    }
+  </main >
+>>>>>>> d28880a194ca441c094a03eb3fc5c115a1862683
+
+  {/* Create Group Modal */ }
+  {
+    showModal && (
+      <CreateGroupModal
+        currentGroupCount={groups.length}
+        onClose={() => setShowModal(false)}
+        onCreate={handleCreateGroup}
+      />
+    )
+  }
+    </AdminLayout >
   );
 }

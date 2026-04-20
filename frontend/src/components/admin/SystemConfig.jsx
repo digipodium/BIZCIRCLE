@@ -3,6 +3,7 @@
 import { useState, useCallback, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useProfile } from "@/lib/useProfile";
+import AdminNotificationDropdown from "./AdminNotificationDropdown";
 import ProtectedRoute from "@/components/auth/ProtectedRoute";
 
 // ─────────────────────────────────────────────
@@ -1007,25 +1008,29 @@ function SystemConfig() {
   const router = useRouter();
 
   const [activeSection, setActiveSection] = useState("general");
-  const [settings, setSettings] = useState(DEFAULT_SETTINGS);
-  const [savedSettings, setSavedSettings] = useState(DEFAULT_SETTINGS);
+  const [settings, setSettings] = useState(() => {
+    if (typeof window !== "undefined") {
+      const saved = localStorage.getItem("bizcircle_system_config");
+      return saved ? JSON.parse(saved) : DEFAULT_SETTINGS;
+    }
+    return DEFAULT_SETTINGS;
+  });
+  const [savedSettings, setSavedSettings] = useState(settings);
   const [toasts, setToasts] = useState([]);
   const [modal, setModal] = useState(null); 
-  const [darkMode, setDarkMode] = useState(false);
+  const [darkMode, setDarkMode] = useState(() => {
+    if (typeof window !== "undefined") {
+      return localStorage.getItem("bizcircle_admin_theme") === "dark";
+    }
+    return false;
+  });
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [isInitialized, setIsInitialized] = useState(false);
 
   // 1. Persistence Initialization
   useEffect(() => {
-    const saved = localStorage.getItem("bizcircle_system_config");
-    const theme = localStorage.getItem("bizcircle_admin_theme");
-    if (saved) {
-      const parsed = JSON.parse(saved);
-      setSettings(parsed);
-      setSavedSettings(parsed);
-    }
-    if (theme === "dark") setDarkMode(true);
-    setIsInitialized(true);
+    const timer = setTimeout(() => setIsInitialized(true), 0);
+    return () => clearTimeout(timer);
   }, []);
 
   // 2. Role Check (Production)
@@ -1106,7 +1111,7 @@ function SystemConfig() {
 
   const activeLabel = SECTIONS.find(s => s.id === activeSection)?.label || "";
 
-  if (!profileLoading && isInitialized && (!user || user.role !== "admin")) {
+  if (!profileLoading && isInitialized && (!user || user.role?.toLowerCase() !== "admin")) {
     return (
       <div style={{
         height: "100vh", background: T.bg, display: "flex", flexDirection: "column",
@@ -1338,6 +1343,8 @@ function SystemConfig() {
 
         <div style={{ flex: 1 }} />
 
+        <AdminNotificationDropdown />
+
         {/* Dark Mode */}
         <button
           id="dark-mode-toggle"
@@ -1400,7 +1407,7 @@ function SystemConfig() {
           display: "flex", alignItems: "center", justifyContent: "center",
           color: "white", fontWeight: 700, fontSize: "13px", cursor: "pointer",
           flexShrink: 0,
-        }}>SG</div>
+        }}>{user?.name?.split(" ").map(n => n[0]).join("").toUpperCase() || "A"}</div>
       </nav>
 
       <div style={{ display: "flex", minHeight: `calc(100vh - ${T.navHeight})` }}>

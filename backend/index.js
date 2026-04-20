@@ -12,8 +12,9 @@ const ActivityRouter = require('./routers/ActivityRouter');
 const circleRouter = require('./routers/CircleRouter');
 const ReferralRouter = require('./routers/ReferralRouter');
 const NotificationRouter = require('./routers/NotificationRouter');
-const AdminRouter = require('./routers/AdminRouter');
-const EventRouter = require('./routers/EventRouter');
+const FeedbackRouter = require('./routers/FeedbackRouter');
+const SearchRouter = require('./routers/SearchRouter');
+const AdminNotificationRouter = require('./routers/AdminNotificationRouter');
 
 const app = express();
 const server = http.createServer(app);
@@ -34,8 +35,16 @@ app.use('/api', ActivityRouter); // Events, Polls, legacy Notifications
 app.use('/api/circles', circleRouter);
 app.use('/api/referrals', ReferralRouter);
 app.use('/api/notifications', NotificationRouter); // Full notification module
-app.use('/api/admin', AdminRouter);
-app.use('/api/events', EventRouter);
+// Expose io so controllers can call io.to(...).emit(...)
+app.set('io', io);
+
+app.use('/api/circles', circleRouter);
+app.use('/api/referrals', ReferralRouter);
+app.use('/api/notifications', NotificationRouter);
+app.use('/api/feedback', FeedbackRouter);
+app.use('/api', SearchRouter);
+app.use('/api', ActivityRouter);
+app.use('/api/admin/notifications', AdminNotificationRouter);
 
 // Health check endpoint
 app.get('/api/health', (req, res) => {
@@ -86,7 +95,9 @@ const startServer = async () => {
     try {
         await connectDB();
         server.listen(port, () => {
+            const mongoose = require('mongoose');
             console.log('Server running on port ' + port);
+            console.log('Registered Models:', mongoose.modelNames());
         });
     } catch (err) {
         console.error('❌ Failed to connect to database:', err.message);

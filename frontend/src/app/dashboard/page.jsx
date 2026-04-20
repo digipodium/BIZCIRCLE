@@ -7,6 +7,7 @@ import CircleList from "@/components/dashboard/CircleList";
 import ActivityFeed from "@/components/dashboard/ActivityFeed";
 import ProfileCard from "@/components/dashboard/ProfileCard";
 import WaysToEarn from "@/components/dashboard/WaysToEarn";
+import DiscoverSection from "@/components/dashboard/DiscoverSection";
 import UpcomingMeetings from "@/components/dashboard/UpcomingMeetings";
 import NetworkingAnalytics from "@/components/dashboard/NetworkingAnalytics";
 import MeetingReminder from "@/components/dashboard/MeetingReminder";
@@ -85,6 +86,8 @@ const DashboardPage = () => {
               />
 
               <WaysToEarn />
+
+              <DiscoverSection />
             </div>
 
             {/* Right Column (Sidebar Content) */}

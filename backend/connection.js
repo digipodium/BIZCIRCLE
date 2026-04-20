@@ -22,10 +22,12 @@ const connectDB = async (retryCount = 5) => {
   } catch (err) {
     if (retryCount > 0) {
       console.warn(`⚠️ Database connection failed. Retrying in 5 seconds... (${retryCount} retries left)`);
-      setTimeout(() => connectDB(retryCount - 1), 5000);
+      // Wait for 5 seconds before retrying
+      await new Promise(resolve => setTimeout(resolve, 5000));
+      return connectDB(retryCount - 1);
     } else {
       console.error('❌ Database connection permanently failed:', err);
-      // We don't exit here to allow the server to potentially recover or be manually fixed
+      throw err; // Rethrow to let the caller handle permanent failure
     }
   }
 };
