@@ -108,7 +108,7 @@ export default function SystemSettingsSection() {
                     <div className="mt-4 p-4 bg-amber-50 rounded-xl border border-amber-100 flex items-start gap-3">
                       <AlertCircle className="text-amber-600 flex-shrink-0" size={18} />
                       <p className="text-xs font-bold text-amber-700 leading-relaxed">
-                        Platform is currently in maintenance mode. Regular users will see a "Service Unavailable" message.
+                        Platform is currently in maintenance mode. Regular users will see a &quot;Service Unavailable&quot; message.
                       </p>
                     </div>
                   )}

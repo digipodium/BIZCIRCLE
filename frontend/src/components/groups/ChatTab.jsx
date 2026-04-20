@@ -7,10 +7,10 @@ import { Send, Paperclip, File } from 'lucide-react';
 export default function ChatTab({ groupId }) {
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState('');
-  const [socket, setSocket] = useState(null);
   const [file, setFile] = useState(null);
+  const socketRef = useRef(null);
   const messagesEndRef = useRef(null);
-  const user = JSON.parse(localStorage.getItem('user') || '{}');
+  const user = JSON.parse(typeof window !== 'undefined' ? localStorage.getItem('user') || '{}' : '{}');
 
   useEffect(() => {
     // Fetch initial messages
@@ -18,8 +18,7 @@ export default function ChatTab({ groupId }) {
 
     // Socket setup
     const newSocket = io(process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000');
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    setSocket(newSocket);
+    socketRef.current = newSocket;
 
     newSocket.emit('join_group', groupId);
 
@@ -27,7 +26,10 @@ export default function ChatTab({ groupId }) {
       setMessages(prev => [...prev, msg]);
     });
 
-    return () => newSocket.close();
+    return () => {
+      newSocket.disconnect();
+      socketRef.current = null;
+    };
   }, [groupId]);
 
   useEffect(() => {
@@ -57,7 +59,7 @@ export default function ChatTab({ groupId }) {
       fileUrl
     };
 
-    socket.emit('send_message', msgData);
+    socketRef.current?.emit('send_message', msgData);
     setInput('');
     setFile(null);
   };

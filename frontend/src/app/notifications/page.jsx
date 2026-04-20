@@ -364,7 +364,6 @@ export default function NotificationsPage() {
     },
   ];
 
-  // Filtered list
   const filtered = useMemo(() => {
     return notifications.filter((n) => {
       if (activeFilter === "unread" && (n.read || n.isRead)) return false;
@@ -373,7 +372,7 @@ export default function NotificationsPage() {
       if (activeCategory !== "all"  && cat !== activeCategory) return false;
       return true;
     });
-  }, [notifications, activeFilter, activeCategory]);
+  }, [notifications, activeFilter, activeCategory, isAdmin]);
 
   // Group by date
   const grouped = useMemo(() => {
