@@ -115,7 +115,29 @@ export default function LogReferralModal({ isOpen, onClose, onSuccess }) {
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="p-6 space-y-4 max-h-[70vh] overflow-y-auto">
+        {(!user?.circles || user.circles.length === 0) ? (
+          <div className="p-8 text-center space-y-6">
+            <div className="w-20 h-20 bg-amber-50 rounded-[2rem] flex items-center justify-center mx-auto text-amber-500 border border-amber-100">
+              <Users size={40} />
+            </div>
+            <div>
+              <h3 className="text-xl font-bold text-slate-900 mb-2">Join a Circle First</h3>
+              <p className="text-slate-500 text-sm leading-relaxed max-w-xs mx-auto">
+                You must join at least one professional circle before you can share referrals with the community.
+              </p>
+            </div>
+            <button 
+              onClick={() => {
+                onClose();
+                window.location.href = '/dashboard/circles';
+              }}
+              className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 rounded-2xl shadow-xl shadow-blue-100 transition-all hover:scale-[1.01]"
+            >
+              Explore Circles
+            </button>
+          </div>
+        ) : (
+          <form onSubmit={handleSubmit} className="p-6 space-y-4 max-h-[70vh] overflow-y-auto">
           {/* Receiver / Connection */}
           <div className="space-y-1.5 border-b border-slate-100 pb-4 mb-4">
             <label className="text-xs font-bold text-slate-500 ml-1 uppercase tracking-wider flex items-center gap-1.5">
@@ -241,6 +263,7 @@ export default function LogReferralModal({ isOpen, onClose, onSuccess }) {
             </button>
           </div>
         </form>
+        )}
       </div>
     </div>
   );
