@@ -23,19 +23,12 @@ const Sidebar = () => {
   const { points } = usePoints();
 
   const menuItems = [
-<<<<<<< HEAD
     { name: "Dashboard", icon: LayoutDashboard, href: "/dashboard" },
     { name: "My Circles", icon: Users, href: "/dashboard/my-circles" },
     { name: "Discover", icon: Compass, href: "/dashboard/discover" },
     { name: "Referrals", icon: Star, href: "/dashboard/referrals" },
     { name: "Profile", icon: UserCircle, href: "/profile" },
-=======
-    { name: "Dashboard",     icon: LayoutDashboard, href: "/dashboard"        },
-    { name: "My Circles",    icon: Users,           href: "/dashboard/my-circles" },
-    { name: "Discover",      icon: Compass,         href: "/dashboard/discover" },
-    { name: "Profile",       icon: UserCircle,      href: "/profile"           },
-    { name: "Notifications", icon: Bell,            href: "/notifications"     },
->>>>>>> befb281570cd00c9c3ab3852643bee84f6259d4d
+    { name: "Notifications", icon: Bell, href: "/notifications" },
   ];
 
   const activeClass = "bg-blue-50 text-blue-600 font-semibold shadow-sm";

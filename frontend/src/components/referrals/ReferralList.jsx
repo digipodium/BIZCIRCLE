@@ -83,7 +83,7 @@ export default function ReferralList({ referrals, type, onUpdate }) {
           {ref.message && (
             <div className="bg-slate-50 rounded-xl p-3 text-[11px] text-slate-500 italic flex gap-2">
               <Info size={12} className="shrink-0 mt-0.5 text-slate-400" />
-              <span>"{ref.message}"</span>
+              <span>&quot;{ref.message}&quot;</span>
             </div>
           )}
 

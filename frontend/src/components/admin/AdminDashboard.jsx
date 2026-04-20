@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import api from "../../lib/axios";
 import AdminHeader from "./AdminHeader";
 import StatsSection from "./StatsSection";
@@ -8,6 +8,8 @@ import GroupsSection from "./GroupsSection";
 import JoinRequestsSection from "./JoinRequestsSection";
 import ConstraintBanner from "./ConstraintBanner";
 import CreateGroupModal from "./CreateGroupModal";
+import EngagementAnalyticsSection from "./EngagementAnalyticsSection";
+import NetworkingActivitySection from "./NetworkingActivitySection";
 
 export default function AdminDashboard() {
   const [groups, setGroups] = useState([]);
@@ -16,22 +18,34 @@ export default function AdminDashboard() {
   const [toast, setToast] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    fetchDashboardData();
-  }, []);
+  const [activities, setActivities] = useState([]);
 
-  const fetchDashboardData = async () => {
+  // Real engagement stats from API
+  const [engagementStats, setEngagementStats] = useState({
+    totalPosts: 0,
+    totalComments: 0,
+    totalReactions: 0,
+    engagementRate: 0
+  });
+
+  const fetchDashboardData = useCallback(async () => {
     try {
       const res = await api.get('/group/admin/dashboard');
       setGroups(res.data.groups);
       setRequests(res.data.requests);
+      if (res.data.engagementStats) setEngagementStats(res.data.engagementStats);
+      if (res.data.activities) setActivities(res.data.activities);
     } catch (err) {
       console.error(err);
       showToast("Failed to load dashboard data", "error");
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    fetchDashboardData();
+  }, [fetchDashboardData]);
 
   const totalMembers = groups.reduce((sum, g) => sum + g.members, 0);
   const totalPending = groups.reduce((sum, g) => sum + g.pending, 0);
@@ -48,7 +62,7 @@ export default function AdminDashboard() {
       await api.put(`/group/${req.groupId}/members/${id}`, { status: 'Approved' });
       fetchDashboardData();
       showToast(`${req.userName} has been accepted into ${req.groupName}`, "success");
-    } catch(err) {
+    } catch (err) {
       showToast("Failed to accept request", "error");
     }
   };
@@ -60,7 +74,7 @@ export default function AdminDashboard() {
       await api.put(`/group/${req.groupId}/members/${id}`, { status: 'Banned' });
       fetchDashboardData();
       showToast(`${req.userName}'s request has been rejected`, "error");
-    } catch(err) {
+    } catch (err) {
       showToast("Failed to reject request", "error");
     }
   };
@@ -75,7 +89,7 @@ export default function AdminDashboard() {
       fetchDashboardData();
       setShowModal(false);
       showToast(`"${newGroup.name}" has been created successfully!`, "success");
-    } catch(err) {
+    } catch (err) {
       console.error(err);
       showToast("Failed to create group", "error");
     }
@@ -225,13 +239,13 @@ export default function AdminDashboard() {
             </div>
 
 
-        <div className="fade-up" style={{ animationDelay: "0.1s" }}>
-          <StatsSection
-            totalGroups={groups.length}
-            totalMembers={totalMembers}
-            pendingRequests={requests.length}
-          />
-        </div>
+            <div className="fade-up" style={{ animationDelay: "0.1s" }}>
+              <StatsSection
+                totalGroups={groups.length}
+                totalMembers={totalMembers}
+                pendingRequests={requests.length}
+              />
+            </div>
 
             <div className="fade-up" style={{ animationDelay: "0.2s" }}>
               <ConstraintBanner />
@@ -248,6 +262,13 @@ export default function AdminDashboard() {
                 onReject={handleReject}
               />
             </div>
+
+            <div className="fade-up" style={{ animationDelay: "0.35s" }}>
+              <EngagementAnalyticsSection stats={engagementStats} />
+            </div>
+
+            <div className="fade-up" style={{ animationDelay: "0.4s" }}>
+              <NetworkingActivitySection activities={activities} />            </div>
           </>
         )}
       </main>

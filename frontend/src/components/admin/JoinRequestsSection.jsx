@@ -27,7 +27,7 @@ function RequestRow({ request, onAccept, onReject }) {
           width: "44px",
           height: "44px",
           borderRadius: "50%",
-          background: `linear-gradient(135deg, ${request.avatarBg.replace("from-", "").replace(" to-", ", ")})`,
+          background: !request.avatarBg.includes("from-") ? request.avatarBg : undefined,
           display: "flex",
           alignItems: "center",
           justifyContent: "center",

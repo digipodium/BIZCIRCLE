@@ -9,13 +9,9 @@ const UserRouter = require('./routers/UserRouter');
 const GroupRouter = require('./routers/GroupRouter');
 const MessageRouter = require('./routers/MessageRouter');
 const ActivityRouter = require('./routers/ActivityRouter');
-<<<<<<< HEAD
-const circleRouter = require("./routers/CircleRouter");
-const ReferralRouter = require("./routers/ReferralRouter");
-=======
 const circleRouter = require('./routers/CircleRouter');
+const ReferralRouter = require('./routers/ReferralRouter');
 const NotificationRouter = require('./routers/NotificationRouter');
->>>>>>> befb281570cd00c9c3ab3852643bee84f6259d4d
 const app = express();
 const server = http.createServer(app);
 const io = new Server(server, { cors: { origin: '*' } });
@@ -31,18 +27,12 @@ app.use('/uploads', express.static('public/uploads'));
 app.use('/user', UserRouter);
 app.use('/group', GroupRouter);
 app.use('/api/messages', MessageRouter);
-<<<<<<< HEAD
-app.use('/api', ActivityRouter); // Events, Polls, Notifications
-app.use("/api/circles", circleRouter);
-app.use("/api/referrals", ReferralRouter);
-=======
 app.use('/api', ActivityRouter); // Events, Polls, legacy Notifications
 app.use('/api/circles', circleRouter);
+app.use('/api/referrals', ReferralRouter);
 app.use('/api/notifications', NotificationRouter); // Full notification module
 // Expose io so controllers can call io.to(...).emit(...)
 app.set('io', io);
-
->>>>>>> befb281570cd00c9c3ab3852643bee84f6259d4d
 // Socket.io integration
 io.on('connection', (socket) => {
     console.log('User connected:', socket.id);
@@ -79,5 +69,7 @@ io.on('connection', (socket) => {
 });
 
 server.listen(port, () => {
+    const mongoose = require('mongoose');
     console.log('Server running on port ' + port);
+    console.log('Registered Models:', mongoose.modelNames());
 });
