@@ -95,7 +95,9 @@ const startServer = async () => {
     try {
         await connectDB();
         server.listen(port, () => {
+            const mongoose = require('mongoose');
             console.log('Server running on port ' + port);
+            console.log('Registered Models:', mongoose.modelNames());
         });
     } catch (err) {
         console.error('❌ Failed to connect to database:', err.message);

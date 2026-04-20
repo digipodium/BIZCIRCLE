@@ -32,7 +32,7 @@ const activitySchema = new mongoose.Schema(
 
     targetModel: {
       type: String,
-      enum: ["Circle", "User", "Post", "Group"],
+      enum: ["Circle", "User", "Group"],
       default: null,
     },
 

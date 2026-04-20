@@ -107,15 +107,12 @@ export default function ReferralList({ referrals, type, onUpdate }) {
             <div className="bg-slate-50 rounded-xl p-3 text-[11px] text-slate-500 italic flex gap-2 mb-4">
               <Info size={12} className="shrink-0 mt-0.5 text-slate-400" />
               <span>&quot;{ref.message}&quot;</span>
-<<<<<<< HEAD
-=======
             </div>
           )}
 
           {ref.status === 'Verified' && ref.verifiedAt && (
             <div className="flex items-center gap-1.5 text-[10px] text-blue-600 font-bold uppercase mb-4">
               <ShieldCheck size={12} /> Verified by Candidate
->>>>>>> a9f8f002775334877bb039486d216a68adc064dd
             </div>
           )}
 
