@@ -103,8 +103,50 @@ router.get('/admin/dashboard', auth, async (req, res) => {
             };
         });
 
-        res.json({ groups: dashboardGroups, requests });
+        // 5. Engagement Stats
+        const totalPosts = await Activity.countDocuments({ targetId: { $in: groupIds }, type: 'post_created' });
+        const totalReactions = await Activity.countDocuments({ targetId: { $in: groupIds }, type: 'endorsement_received' });
+        const totalComments = 0; // Currently no comment tracking in Activity model
+        // Mocking an engagement rate based on some arbitrary formula if posts > 0
+        const engagementRate = totalPosts > 0 ? Math.min(100, Math.round(((totalReactions + totalComments) / totalPosts) * 10)) : 0;
+        
+        const engagementStats = {
+            totalPosts,
+            totalComments,
+            totalReactions,
+            engagementRate
+        };
+
+        // 6. Network Activities
+        const recentActivities = await Activity.find({ targetId: { $in: groupIds } })
+            .sort({ createdAt: -1 })
+            .limit(10)
+            .populate('userId', 'name')
+            .lean();
+            
+        const activities = recentActivities.map(act => {
+            let type = "📢"; 
+            if (act.type === 'connection_accepted') type = "connection";
+            else if (act.type === 'post_created') type = "post";
+            else if (act.type === 'circle_joined') type = "milestone";
+            else type = "milestone"; // fallback to milestone
+
+            const timeDiff = Math.floor((new Date() - new Date(act.createdAt)) / 60000); 
+            let timeStr = `${timeDiff} mins ago`;
+            if (timeDiff > 60) timeStr = `${Math.floor(timeDiff/60)} hours ago`;
+            if (timeDiff > 1440) timeStr = `${Math.floor(timeDiff/1440)} days ago`;
+
+            return {
+                id: act._id,
+                type,
+                text: act.description || `${act.userId?.name || 'Someone'} performed an action`,
+                time: timeStr
+            };
+        });
+
+        res.json({ groups: dashboardGroups, requests, engagementStats, activities });
     } catch (err) {
+        console.error('Admin Dashboard Error:', err);
         res.status(500).json({ error: err.message });
     }
 });

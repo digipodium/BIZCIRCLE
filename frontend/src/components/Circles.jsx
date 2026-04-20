@@ -126,7 +126,7 @@ export default function Circles() {
         <div className="flex items-center justify-between flex-wrap gap-3">
           <div>
             <h2 className="font-bold text-slate-800 text-base">My Circles</h2>
-            <p className="text-xs text-slate-400 mt-0.5">Circles and niche groups you've joined in your domain.</p>
+            <p className="text-xs text-slate-400 mt-0.5">Circles and niche groups you&apos;ve joined in your domain.</p>
           </div>
           {/* Progress Indicator removed per user request */}
           <div className="flex items-center gap-2 bg-blue-50 px-3 py-1.5 rounded-xl border border-blue-100">

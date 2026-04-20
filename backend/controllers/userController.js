@@ -1,6 +1,7 @@
 const User = require('../models/userModel');
 const GroupMember = require('../models/groupMemberModel');
 const Group = require('../models/groupModel');
+const Circle = require('../models/circleModel');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const { OAuth2Client } = require('google-auth-library');
@@ -163,7 +164,7 @@ const getUserProfile = async (req, res) => {
     res.json({ ...user.toObject(), joinedGroups });
   } catch (err) {
     console.error('Get profile error:', err);
-    res.status(500).json({ message: 'Server error' });
+    res.status(500).json({ message: err.message || 'Server error' });
   }
 };
 

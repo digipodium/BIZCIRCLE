@@ -30,10 +30,10 @@ app.use('/uploads', express.static('public/uploads'));
 app.use('/user', UserRouter);
 app.use('/group', GroupRouter);
 app.use('/api/messages', MessageRouter);
-app.use('/api', ActivityRouter);
+app.use('/api', ActivityRouter); // Events, Polls, legacy Notifications
 app.use('/api/circles', circleRouter);
 app.use('/api/referrals', ReferralRouter);
-app.use('/api/notifications', NotificationRouter);
+app.use('/api/notifications', NotificationRouter); // Full notification module
 app.use('/api/admin', AdminRouter);
 app.use('/api/events', EventRouter);
 
