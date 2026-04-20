@@ -12,6 +12,8 @@ const ActivityRouter = require('./routers/ActivityRouter');
 const circleRouter = require('./routers/CircleRouter');
 const ReferralRouter = require('./routers/ReferralRouter');
 const NotificationRouter = require('./routers/NotificationRouter');
+const AdminRouter = require('./routers/AdminRouter');
+const EventRouter = require('./routers/EventRouter');
 
 const app = express();
 const server = http.createServer(app);
@@ -32,6 +34,8 @@ app.use('/api', ActivityRouter);
 app.use('/api/circles', circleRouter);
 app.use('/api/referrals', ReferralRouter);
 app.use('/api/notifications', NotificationRouter);
+app.use('/api/admin', AdminRouter);
+app.use('/api/events', EventRouter);
 
 // Health check endpoint
 app.get('/api/health', (req, res) => {

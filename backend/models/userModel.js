@@ -10,8 +10,13 @@ const userSchema = new mongoose.Schema({
   skills: [{ type: String }],
   role: { 
     type: String, 
-    enum: ["user", "admin"], 
+    enum: ["user", "admin", "moderator"], 
     default: "user" 
+  },
+  status: {
+    type: String,
+    enum: ["Active", "Suspended", "Banned"],
+    default: "Active"
   },
   organization: String,
 

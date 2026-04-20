@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { Plus, Search, MoreVertical, Trash2, Shield, Eye, CheckCircle, XCircle, Users } from 'lucide-react';
 
 // Reusing domain colors from original GroupsSection
@@ -97,9 +98,9 @@ export default function GroupManagementSection({ groups, requests, onAccept, onR
                   </p>
                   
                   <div className="grid grid-cols-2 gap-3">
-                    <button className="flex items-center justify-center gap-2 py-2.5 bg-slate-900 rounded-xl text-xs font-bold text-white hover:bg-slate-800 transition-colors">
+                    <Link href={`/groups/${group.id}`} className="flex items-center justify-center gap-2 py-2.5 bg-slate-900 rounded-xl text-xs font-bold text-white hover:bg-slate-800 transition-colors">
                       <Eye size={14} /> View
-                    </button>
+                    </Link>
                     <button className="flex items-center justify-center gap-2 py-2.5 bg-slate-100 rounded-xl text-xs font-bold text-slate-600 hover:bg-slate-200 transition-colors">
                       <Shield size={14} /> Roles
                     </button>

@@ -1,5 +1,6 @@
 "use client";
 
+import { useState, useEffect } from 'react';
 import { 
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
   BarChart, Bar, Cell
@@ -7,9 +8,28 @@ import {
 import { 
   Users, Activity, Grid, FileText, AlertCircle, TrendingUp, TrendingDown 
 } from 'lucide-react';
-import { MOCK_STATS, USER_GROWTH_DATA, ENGAGEMENT_STATS, RECENT_ACTIVITY } from '@/lib/adminMockData';
+import { ENGAGEMENT_STATS, MOCK_STATS as INITIAL_MOCK_STATS, USER_GROWTH_DATA as INITIAL_USER_GROWTH_DATA, RECENT_ACTIVITY as INITIAL_RECENT_ACTIVITY } from '@/lib/adminMockData';
+import api from '@/lib/axios';
 
 export default function OverviewSection() {
+  const [stats, setStats] = useState(INITIAL_MOCK_STATS);
+  const [userGrowth, setUserGrowth] = useState(INITIAL_USER_GROWTH_DATA);
+  const [recentActivity, setRecentActivity] = useState(INITIAL_RECENT_ACTIVITY);
+  const [engagementStats, setEngagementStats] = useState(ENGAGEMENT_STATS);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    api.get('/api/admin/dashboard')
+      .then(res => {
+        setStats(res.data.stats);
+        setUserGrowth(res.data.userGrowth);
+        setRecentActivity(res.data.recentActivity);
+        if (res.data.engagementStats) setEngagementStats(res.data.engagementStats);
+      })
+      .catch(err => console.error('Failed to fetch admin stats:', err))
+      .finally(() => setLoading(false));
+  }, []);
+
   const ICON_MAP = {
     Users: Users,
     Activity: Activity,
@@ -37,9 +57,9 @@ export default function OverviewSection() {
 
       {/* Stats Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
-        {MOCK_STATS.map((stat) => {
+        {stats.map((stat) => {
           const Icon = ICON_MAP[stat.icon];
-          const isPositive = stat.trend.startsWith('+');
+          const isPositive = stat.trend.toString().startsWith('+');
           return (
             <div key={stat.id} className="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm hover:shadow-md transition-shadow group">
               <div className="flex items-center justify-between mb-4">
@@ -71,7 +91,7 @@ export default function OverviewSection() {
           </div>
           <div className="h-72 w-full">
             <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={USER_GROWTH_DATA}>
+              <LineChart data={userGrowth}>
                 <defs>
                   <linearGradient id="colorUsers" x1="0" y1="0" x2="0" y2="1">
                     <stop offset="5%" stopColor="#2563eb" stopOpacity={0.1}/>
@@ -114,7 +134,7 @@ export default function OverviewSection() {
             <button className="text-blue-600 text-xs font-bold hover:underline">View All</button>
           </div>
           <div className="space-y-6">
-            {RECENT_ACTIVITY.map((activity) => (
+            {recentActivity.map((activity) => (
               <div key={activity.id} className="flex gap-4">
                 <div className={`w-2 h-2 rounded-full mt-2 flex-shrink-0 ${
                   activity.type === 'user' ? 'bg-blue-500' : 
@@ -136,7 +156,7 @@ export default function OverviewSection() {
         <h3 className="text-lg font-bold text-slate-800 mb-8">Weekly Engagement</h3>
         <div className="h-64 w-full">
           <ResponsiveContainer width="100%" height="100%">
-            <BarChart data={ENGAGEMENT_STATS}>
+            <BarChart data={engagementStats}>
               <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
               <XAxis 
                 dataKey="name" 

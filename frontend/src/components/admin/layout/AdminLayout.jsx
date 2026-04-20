@@ -16,6 +16,7 @@ import {
   Menu,
   X
 } from "lucide-react";
+import { useProfile } from "@/lib/useProfile";
 
 const SIDEBAR_ITEMS = [
   { id: 'overview', label: 'Dashboard', icon: LayoutDashboard },
@@ -31,6 +32,11 @@ const SIDEBAR_ITEMS = [
 
 export default function AdminLayout({ children, activeSection, setActiveSection }) {
   const [sidebarOpen, setSidebarOpen] = useState(true);
+  const { user } = useProfile();
+
+  const initials = user?.name
+    ? user.name.split(" ").map((n) => n[0]).join("").toUpperCase().slice(0, 2)
+    : "AD";
 
   return (
     <div className="flex min-h-screen bg-slate-50 text-slate-900 font-sans">
@@ -123,11 +129,11 @@ export default function AdminLayout({ children, activeSection, setActiveSection 
             <div className="h-8 w-px bg-slate-200"></div>
             <div className="flex items-center gap-3 pl-2">
               <div className="text-right hidden sm:block">
-                <p className="text-sm font-bold text-slate-800">Sudeshna M.</p>
-                <p className="text-xs text-slate-500 font-medium">Head Admin</p>
+                <p className="text-sm font-bold text-slate-800">{user?.name || "Admin"}</p>
+                <p className="text-xs text-slate-500 font-medium capitalize">{user?.role || "System Admin"}</p>
               </div>
               <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-100 to-pink-100 border-2 border-white shadow-sm flex items-center justify-center text-blue-600 font-bold overflow-hidden">
-                SM
+                {initials}
               </div>
             </div>
           </div>
