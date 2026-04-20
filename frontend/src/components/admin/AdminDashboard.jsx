@@ -2,19 +2,13 @@
 
 import { useState, useEffect, useCallback } from "react";
 import api from "../../lib/axios";
-import AdminHeader from "./AdminHeader";
-import StatsSection from "./StatsSection";
-import GroupsSection from "./GroupsSection";
-import JoinRequestsSection from "./JoinRequestsSection";
-import ConstraintBanner from "./ConstraintBanner";
 import CreateGroupModal from "./CreateGroupModal";
-import EngagementAnalyticsSection from "./EngagementAnalyticsSection";
-import NetworkingActivitySection from "./NetworkingActivitySection";
 
 export default function AdminDashboard() {
   const [groups, setGroups] = useState([]);
   const [requests, setRequests] = useState([]);
   const [showModal, setShowModal] = useState(false);
+  const [activeSection, setActiveSection] = useState("overview");
   const [toast, setToast] = useState(null);
   const [loading, setLoading] = useState(true);
 
@@ -30,14 +24,22 @@ export default function AdminDashboard() {
 
   const fetchDashboardData = useCallback(async () => {
     try {
+      const token = localStorage.getItem('token');
+      if (!token) {
+        console.warn('No token found when fetching dashboard data');
+        showToast("Session expired. Please log in again.", "error");
+        return;
+      }
+
       const res = await api.get('/group/admin/dashboard');
       setGroups(res.data.groups);
       setRequests(res.data.requests);
       if (res.data.engagementStats) setEngagementStats(res.data.engagementStats);
       if (res.data.activities) setActivities(res.data.activities);
     } catch (err) {
-      console.error(err);
-      showToast("Failed to load dashboard data", "error");
+      console.error('Dashboard fetch error:', err);
+      const errorMsg = err.response?.data?.message || err.message || "Failed to load dashboard data";
+      showToast(errorMsg, "error");
     } finally {
       setLoading(false);
     }
@@ -81,6 +83,12 @@ export default function AdminDashboard() {
 
   const handleCreateGroup = async (newGroup) => {
     try {
+      const token = localStorage.getItem('token');
+      if (!token) {
+        showToast("Session expired. Please log in again.", "error");
+        return;
+      }
+
       await api.post('/group', {
         ...newGroup,
         isPrivate: true,
@@ -96,13 +104,13 @@ export default function AdminDashboard() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 font-sans">
+    <AdminLayout activeSection={activeSection} setActiveSection={setActiveSection}>
       {/* Toast Notification */}
       {toast && (
         <div
           style={{
             position: "fixed",
-            top: "24px",
+            top: "80px",
             right: "24px",
             zIndex: 9999,
             display: "flex",
@@ -262,13 +270,6 @@ export default function AdminDashboard() {
                 onReject={handleReject}
               />
             </div>
-
-            <div className="fade-up" style={{ animationDelay: "0.35s" }}>
-              <EngagementAnalyticsSection stats={engagementStats} />
-            </div>
-
-            <div className="fade-up" style={{ animationDelay: "0.4s" }}>
-              <NetworkingActivitySection activities={activities} />            </div>
           </>
         )}
       </main>
@@ -281,6 +282,6 @@ export default function AdminDashboard() {
           onCreate={handleCreateGroup}
         />
       )}
-    </div>
+    </AdminLayout>
   );
 }

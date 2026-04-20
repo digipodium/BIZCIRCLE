@@ -1,12 +1,12 @@
 "use client";
 
-import AdminDashboard from "@/components/admin/AdminDashboard";
+import SystemConfig from "@/components/admin/SystemConfig";
 import ProtectedRoute from "@/components/auth/ProtectedRoute";
 
-export default function AdminPage() {
+export default function SystemConfigPage() {
   return (
     <ProtectedRoute allowedRoles={["admin"]}>
-      <AdminDashboard />
+      <SystemConfig />
     </ProtectedRoute>
   );
 }

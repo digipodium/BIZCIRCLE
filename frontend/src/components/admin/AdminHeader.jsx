@@ -27,6 +27,39 @@ export default function AdminHeader({ groupCount, maxGroups, onCreateGroup }) {
         </p>
       </div>
 
+      <div style={{ display: "flex", gap: "10px", flexWrap: "wrap" }}>
+        <a
+          href="/admin/system-config"
+          id="system-config-link"
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: "8px",
+            padding: "12px 20px",
+            background: "#f8fafc",
+            color: "#374151",
+            border: "1.5px solid #e5e7eb",
+            borderRadius: "12px",
+            fontWeight: 600,
+            fontSize: "14px",
+            cursor: "pointer",
+            textDecoration: "none",
+            whiteSpace: "nowrap",
+            transition: "all 0.2s ease",
+          }}
+          onMouseEnter={e => {
+            e.currentTarget.style.borderColor = "#2563eb";
+            e.currentTarget.style.color = "#2563eb";
+            e.currentTarget.style.background = "#eff6ff";
+          }}
+          onMouseLeave={e => {
+            e.currentTarget.style.borderColor = "#e5e7eb";
+            e.currentTarget.style.color = "#374151";
+            e.currentTarget.style.background = "#f8fafc";
+          }}
+        >
+          ⚙️ System Config
+        </a>
       <button
         id="create-group-btn"
         onClick={onCreateGroup}
@@ -76,6 +109,7 @@ export default function AdminHeader({ groupCount, maxGroups, onCreateGroup }) {
           </span>
         )}
       </button>
+      </div>
     </div>
   );
 }

@@ -1,26 +1,29 @@
 "use client";
 
 import React, { useState } from "react";
-import { 
-  LayoutDashboard, 
-  Users, 
-  Compass, 
-  UserCircle, 
-  LogOut, 
-  Menu, 
+import {
+  LayoutDashboard,
+  Users,
+  Compass,
+  UserCircle,
+  LogOut,
+  Menu,
   X,
   Star,
-  Bell
+  Bell,
+  Shield
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { usePoints } from "@/context/PointsContext";
+import { useProfile } from "@/lib/useProfile";
 import NotificationBell from "@/components/NotificationBell";
 
 const Sidebar = () => {
   const [isOpen, setIsOpen] = useState(false);
   const pathname = usePathname();
   const { points } = usePoints();
+  const { user } = useProfile();
 
   const menuItems = [
     { name: "Dashboard", icon: LayoutDashboard, href: "/dashboard" },
@@ -31,13 +34,18 @@ const Sidebar = () => {
     { name: "Notifications", icon: Bell, href: "/notifications" },
   ];
 
+  // Add Admin link if user is admin
+  if (user?.role === "admin") {
+    menuItems.push({ name: "Admin", icon: Shield, href: "/admin" });
+  }
+
   const activeClass = "bg-blue-50 text-blue-600 font-semibold shadow-sm";
   const inactiveClass = "text-slate-600 hover:bg-slate-50 hover:text-blue-600 transition-all duration-200";
 
   return (
     <>
       {/* Mobile Toggle */}
-      <button 
+      <button
         onClick={() => setIsOpen(!isOpen)}
         className="lg:hidden fixed top-4 left-4 z-50 p-2 bg-white rounded-xl shadow-md border border-slate-100 text-slate-600"
       >
@@ -46,7 +54,7 @@ const Sidebar = () => {
 
       {/* Backdrop */}
       {isOpen && (
-        <div 
+        <div
           className="fixed inset-0 bg-slate-900/20 backdrop-blur-sm z-40 lg:hidden"
           onClick={() => setIsOpen(false)}
         />
@@ -65,9 +73,9 @@ const Sidebar = () => {
             <div className="flex items-center gap-3">
               <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-blue-600 to-blue-400 flex items-center justify-center shadow-lg shadow-blue-100">
                 <svg viewBox="0 0 20 20" fill="white" className="w-5 h-5">
-                  <circle cx="5" cy="10" r="2.5"/><circle cx="15" cy="5" r="2.5"/><circle cx="15" cy="15" r="2.5"/>
-                  <line x1="7.2" y1="9" x2="13" y2="6.2" stroke="white" strokeWidth="1.5"/>
-                  <line x1="7.2" y1="11" x2="13" y2="13.8" stroke="white" strokeWidth="1.5"/>
+                  <circle cx="5" cy="10" r="2.5" /><circle cx="15" cy="5" r="2.5" /><circle cx="15" cy="15" r="2.5" />
+                  <line x1="7.2" y1="9" x2="13" y2="6.2" stroke="white" strokeWidth="1.5" />
+                  <line x1="7.2" y1="11" x2="13" y2="13.8" stroke="white" strokeWidth="1.5" />
                 </svg>
               </div>
               <span className="font-bold text-xl text-slate-900 tracking-tight">BizCircle</span>
@@ -95,7 +103,7 @@ const Sidebar = () => {
             {menuItems.map((item) => {
               const isActive = pathname === item.href;
               return (
-                <Link 
+                <Link
                   key={item.href}
                   href={item.href}
                   onClick={() => setIsOpen(false)}

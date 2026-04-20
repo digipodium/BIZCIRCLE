@@ -33,10 +33,15 @@ router.post('/', auth, async (req, res) => {
     }
 });
 
-// Get All Groups (unchanged)
+// Get All Groups (with search support)
 router.get('/', async (req, res) => {
     try {
-        const groups = await Group.find().populate('createdBy', 'name email');
+        const { search } = req.query;
+        let query = {};
+        if (search) {
+            query.name = { $regex: search, $options: 'i' };
+        }
+        const groups = await Group.find(query).populate('createdBy', 'name email');
         res.json(groups);
     } catch (err) {
         res.status(500).json({ error: err.message });
@@ -156,6 +161,24 @@ router.get('/my', auth, async (req, res) => {
         // 2. Fetch the groups and populate any necessary info
         const groups = await Group.find({ _id: { $in: groupIds } }).populate('createdBy', 'name email');
         res.json(groups);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// Get Mutual Groups with another user
+router.get('/mutual/:otherUserId', auth, async (req, res) => {
+    try {
+        const myMemberships = await GroupMember.find({ user: req.user.id, status: 'Approved' });
+        const otherMemberships = await GroupMember.find({ user: req.params.otherUserId, status: 'Approved' });
+        
+        const myGroupIds = myMemberships.map(m => m.group.toString());
+        const otherGroupIds = otherMemberships.map(m => m.group.toString());
+        
+        const mutualGroupIds = myGroupIds.filter(id => otherGroupIds.includes(id));
+        const mutualGroups = await Group.find({ _id: { $in: mutualGroupIds } }).populate('createdBy', 'name email');
+        
+        res.json(mutualGroups);
     } catch (err) {
         res.status(500).json({ error: err.message });
     }

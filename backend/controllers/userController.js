@@ -4,6 +4,10 @@ const Group = require('../models/groupModel');
 const Circle = require('../models/circleModel');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
+const { OAuth2Client } = require('google-auth-library');
+
+const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
+
 
 const JWT_SECRET = process.env.JWT_SECRET || 'mytopseret';
 
@@ -84,6 +88,59 @@ const login = async (req, res) => {
     res.status(500).json({ message: 'Server error' });
   }
 };
+
+// POST /user/google-login
+const googleLogin = async (req, res) => {
+  try {
+    const { idToken } = req.body;
+    if (!idToken) {
+      return res.status(400).json({ message: 'ID Token is required' });
+    }
+
+    const ticket = await client.verifyIdToken({
+      idToken,
+      audience: process.env.GOOGLE_CLIENT_ID,
+    });
+    const payload = ticket.getPayload();
+    const { sub: googleId, email, name, picture } = payload;
+
+    let user = await User.findOne({ $or: [{ googleId }, { email }] });
+
+    if (!user) {
+      // Create new user
+      user = await User.create({
+        name,
+        email,
+        googleId,
+        profilePicture: picture,
+        role: 'Professional',
+        points: 50,
+      });
+    } else if (!user.googleId) {
+      // Link Google ID to existing email account
+      user.googleId = googleId;
+      if (!user.profilePicture) user.profilePicture = picture;
+      await user.save();
+    }
+
+    const token = jwt.sign({ id: user._id, role: user.role }, JWT_SECRET, { expiresIn: '7d' });
+
+    res.json({
+      token,
+      user: {
+        id: user._id,
+        name: user.name,
+        email: user.email,
+        role: user.role,
+        profilePicture: user.profilePicture,
+      },
+    });
+  } catch (err) {
+    console.error('Google login error:', err);
+    res.status(401).json({ message: 'Invalid Google token' });
+  }
+};
+
 
 // GET /user/profile  (requires auth middleware)
 const getUserProfile = async (req, res) => {
@@ -242,4 +299,24 @@ const getUserAnalytics = async (req, res) => {
   }
 };
 
-module.exports = { signup, login, getUserProfile, updateUserProfile, updatePoints, uploadAvatar, getUserAnalytics };
+const getAllUsers = async (req, res) => {
+  try {
+    const { search } = req.query;
+    let query = { _id: { $ne: req.user.id } };
+
+    if (search) {
+      query.$or = [
+        { name: { $regex: search, $options: 'i' } },
+        { headline: { $regex: search, $options: 'i' } }
+      ];
+    }
+
+    const users = await User.find(query).select('name email headline profilePicture');
+    res.json(users);
+  } catch (err) {
+    console.error('Get all users error:', err);
+    res.status(500).json({ message: 'Server error' });
+  }
+};
+
+module.exports = { signup, login, googleLogin, getUserProfile, updateUserProfile, updatePoints, uploadAvatar, getUserAnalytics, getAllUsers };

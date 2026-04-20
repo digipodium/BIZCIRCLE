@@ -3,6 +3,7 @@ import Link from "next/link";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import api from "@/lib/axios";
+import { GoogleLogin } from "@react-oauth/google";
 
 const GoogleIcon = () => (
   <svg className="w-4 h-4" viewBox="0 0 24 24">
@@ -20,6 +21,24 @@ export default function LoginPage() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+
+  const handleGoogleSuccess = async (credentialResponse) => {
+    setLoading(true);
+    setError("");
+    try {
+      const { data } = await api.post("/user/google-login", { 
+        idToken: credentialResponse.credential 
+      });
+      localStorage.setItem("token", data.token);
+      localStorage.setItem("userId", data.user.id);
+      localStorage.setItem("userName", data.user.name);
+      router.push("/profile");
+    } catch (err) {
+      setError(err.response?.data?.message || "Google sign-in failed.");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleLogin = async (e) => {
     e.preventDefault();
@@ -107,10 +126,17 @@ export default function LoginPage() {
             )}
 
             {/* Google */}
-            <button className="w-full flex items-center justify-center gap-3 bg-white border border-slate-200 text-slate-700 font-semibold text-sm py-3 rounded-xl hover:border-blue-300 hover:bg-blue-50 transition-all duration-200 shadow-sm">
-              <GoogleIcon />
-              Continue with Google
-            </button>
+            <div className="w-full flex justify-center">
+              <GoogleLogin
+                onSuccess={handleGoogleSuccess}
+                onError={() => setError("Google login failed")}
+                theme="outline"
+                size="large"
+                shape="pill"
+                width="100%"
+                text="continue_with"
+              />
+            </div>
 
             {/* Divider */}
             <div className="flex items-center gap-3">
