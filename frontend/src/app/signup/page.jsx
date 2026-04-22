@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import api from "@/lib/axios";
 import { GoogleLogin } from "@react-oauth/google";
+import { useProfile } from "@/lib/useProfile";
 
 const GoogleIcon = () => (
 
@@ -15,7 +16,7 @@ const GoogleIcon = () => (
   </svg>
 );
 
-const ROLES = ["Entrepreneur", "Student", "Professional", "Freelancer", "Investor"];
+const CATEGORIES = ["Entrepreneur", "Student", "Professional", "Freelancer", "Investor"];
 
 const PERKS = [
   { icon: "⭐", title: "+50 BizPoints", desc: "Just for completing your profile" },
@@ -28,10 +29,11 @@ export default function SignupPage() {
   const router = useRouter();
   const [showPass, setShowPass] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
-  const [form, setForm] = useState({ firstName: "", lastName: "", email: "", password: "", confirm: "", role: "" });
+  const [form, setForm] = useState({ firstName: "", lastName: "", email: "", password: "", confirm: "", category: "" });
   const [agreed, setAgreed] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const { login } = useProfile();
 
   const set = (k) => (e) => setForm((f) => ({ ...f, [k]: e.target.value }));
   
@@ -42,9 +44,7 @@ export default function SignupPage() {
       const { data } = await api.post("/user/google-login", { 
         idToken: credentialResponse.credential 
       });
-      localStorage.setItem("token", data.token);
-      localStorage.setItem("userId", data.user.id);
-      localStorage.setItem("userName", data.user.name);
+      login(data.token, data.user);
       router.push("/profile");
     } catch (err) {
       setError(err.response?.data?.message || "Google sign-up failed.");
@@ -82,13 +82,11 @@ export default function SignupPage() {
         lastName: form.lastName,
         email: form.email,
         password: form.password,
-        role: form.role || "user",
+        category: form.category || "Other",
       });
 
       // Store auth info
-      localStorage.setItem("token", data.token);
-      localStorage.setItem("userId", data.user.id);
-      localStorage.setItem("userName", data.user.name);
+      login(data.token, data.user);
 
       // Redirect to profile
       router.push("/profile");
@@ -278,12 +276,12 @@ export default function SignupPage() {
             <div>
               <label className="block text-sm font-semibold text-slate-700 mb-2">I am a...</label>
               <div className="flex flex-wrap gap-2">
-                {ROLES.map((r) => (
+                {CATEGORIES.map((r) => (
                   <button
                     key={r}
                     type="button"
-                    onClick={() => setForm(f => ({ ...f, role: r }))}
-                    className={`role-pill text-xs font-semibold px-3.5 py-1.5 rounded-xl border ${form.role === r ? "active" : "border-slate-200 text-slate-600 bg-white"}`}
+                    onClick={() => setForm(f => ({ ...f, category: r }))}
+                    className={`role-pill text-xs font-semibold px-3.5 py-1.5 rounded-xl border ${form.category === r ? "active" : "border-slate-200 text-slate-600 bg-white"}`}
                   >
                     {r}
                   </button>

@@ -13,7 +13,7 @@ const domainColors = {
   Healthcare: { bg: "#fef2f2", text: "#dc2626", border: "#fecaca" },
 };
 
-export default function GroupManagementSection({ groups, requests, onAccept, onReject }) {
+export default function GroupManagementSection({ groups, requests, creationRequests, onAccept, onReject, onApproveCircle, onRejectCircle }) {
   const [activeTab, setActiveTab] = useState("all");
   const [searchTerm, setSearchTerm] = useState("");
 
@@ -26,8 +26,8 @@ export default function GroupManagementSection({ groups, requests, onAccept, onR
     <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-extrabold text-slate-900 tracking-tight">Group Management</h1>
-          <p className="text-slate-500 font-medium">Manage communities, approve circles, and assign moderators.</p>
+          <h1 className="text-2xl font-extrabold text-slate-900 tracking-tight">Community Hub</h1>
+          <p className="text-slate-500 font-medium tracking-tight">Moderate members and approve new professional communities.</p>
         </div>
         <button className="flex items-center gap-2 px-6 py-3 bg-blue-600 rounded-2xl text-sm font-bold text-white hover:bg-blue-700 transition-all shadow-md shadow-blue-100">
           <Plus size={18} />
@@ -38,14 +38,14 @@ export default function GroupManagementSection({ groups, requests, onAccept, onR
       {/* Tabs */}
       <div className="flex border-b border-slate-100 overflow-x-auto">
         {[
-          { id: 'all', label: 'All Groups', count: groups?.length },
-          { id: 'pending', label: 'Creation Requests', count: requests?.length },
-          { id: 'active', label: 'Active', count: groups?.filter(g => g.members > 0).length },
+          { id: 'all', label: 'All Circles', count: groups?.length },
+          { id: 'creation', label: 'New Circles', count: creationRequests?.length },
+          { id: 'membership', label: 'Join Requests', count: requests?.length },
         ].map(tab => (
           <button
             key={tab.id}
             onClick={() => setActiveTab(tab.id)}
-            className={`px-6 py-4 text-sm font-bold transition-all border-b-2 flex items-center gap-2 ${
+            className={`px-6 py-4 text-sm font-bold transition-all border-b-2 flex items-center gap-2 whitespace-nowrap ${
               activeTab === tab.id ? 'border-blue-600 text-blue-600' : 'border-transparent text-slate-500 hover:text-slate-700'
             }`}
           >
@@ -64,7 +64,7 @@ export default function GroupManagementSection({ groups, requests, onAccept, onR
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
         <input 
           type="text" 
-          placeholder="Search groups by name or domain..."
+          placeholder="Search circles by name or domain..."
           className="w-full bg-white border border-slate-200 rounded-2xl py-3 pl-10 pr-4 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 transition-all font-medium shadow-sm"
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
@@ -77,17 +77,15 @@ export default function GroupManagementSection({ groups, requests, onAccept, onR
             const domStyle = domainColors[group.domain] || domainColors.Technology;
             return (
               <div key={group.id} className="bg-white rounded-3xl border border-slate-100 shadow-sm overflow-hidden group hover:shadow-xl hover:-translate-y-1 transition-all duration-300">
-                <div className="h-24 relative" style={{ 
-                  background: group.color.includes('from-') ? '' : `linear-gradient(135deg, #2563eb, #7c3aed)`,
-                }}>
-                  <div className={`absolute inset-0 bg-gradient-to-br ${group.color}`}></div>
+                <div className="h-24 relative">
+                  <div className={`absolute inset-0 bg-gradient-to-br ${group.color || 'from-blue-600 to-blue-400'}`}></div>
                   <div className="absolute -bottom-6 left-6 w-12 h-12 rounded-2xl bg-white shadow-lg flex items-center justify-center text-2xl border-4 border-white">
                     {group.icon || '⬡'}
                   </div>
                 </div>
                 <div className="p-8 pt-10">
                   <div className="flex justify-between items-start mb-2">
-                    <h3 className="text-lg font-extrabold text-slate-900 group-hover:text-blue-600 transition-colors">{group.name}</h3>
+                    <h3 className="text-lg font-extrabold text-slate-900 group-hover:text-blue-600 transition-colors line-clamp-1">{group.name}</h3>
                     <span className={`text-[10px] font-extrabold px-2 py-1 rounded-lg uppercase tracking-wider border ${domStyle.bg} ${domStyle.text} ${domStyle.border}`}>
                       {group.domain}
                     </span>
@@ -98,7 +96,7 @@ export default function GroupManagementSection({ groups, requests, onAccept, onR
                   </p>
                   
                   <div className="grid grid-cols-2 gap-3">
-                    <Link href={`/groups/${group.id}`} className="flex items-center justify-center gap-2 py-2.5 bg-slate-900 rounded-xl text-xs font-bold text-white hover:bg-slate-800 transition-colors">
+                    <Link href={`/dashboard/circles/${group.id}`} className="flex items-center justify-center gap-2 py-2.5 bg-slate-900 rounded-xl text-xs font-bold text-white hover:bg-slate-800 transition-colors">
                       <Eye size={14} /> View
                     </Link>
                     <button className="flex items-center justify-center gap-2 py-2.5 bg-slate-100 rounded-xl text-xs font-bold text-slate-600 hover:bg-slate-200 transition-colors">
@@ -112,15 +110,77 @@ export default function GroupManagementSection({ groups, requests, onAccept, onR
         </div>
       )}
 
-      {activeTab === 'pending' && (
-        <div className="bg-white rounded-3xl border border-slate-100 shadow-sm overflow-hidden">
+      {activeTab === 'creation' && (
+        <div className="bg-white rounded-3xl border border-slate-100 shadow-sm overflow-hidden animate-in fade-in slide-in-from-bottom-2">
           <div className="overflow-x-auto">
             <table className="w-full text-left border-collapse">
               <thead>
                 <tr className="bg-slate-50 border-b border-slate-100">
-                  <th className="px-6 py-4 text-xs font-extrabold text-slate-500 uppercase tracking-wider">Group</th>
-                  <th className="px-6 py-4 text-xs font-extrabold text-slate-500 uppercase tracking-wider">Requested By</th>
-                  <th className="px-6 py-4 text-xs font-extrabold text-slate-500 uppercase tracking-wider">Date</th>
+                  <th className="px-6 py-4 text-xs font-extrabold text-slate-500 uppercase tracking-wider">New Circle</th>
+                  <th className="px-6 py-4 text-xs font-extrabold text-slate-500 uppercase tracking-wider">Creator</th>
+                  <th className="px-6 py-4 text-xs font-extrabold text-slate-500 uppercase tracking-wider">Location</th>
+                  <th className="px-6 py-4 text-xs font-extrabold text-slate-500 uppercase tracking-wider text-right">Actions</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-50">
+                {(creationRequests || []).map((req) => (
+                  <tr key={req.id} className="hover:bg-slate-50/50 transition-colors group">
+                    <td className="px-6 py-4">
+                      <div className="flex items-center gap-3">
+                        <div className={`w-10 h-10 rounded-xl bg-gradient-to-br ${req.color} flex items-center justify-center text-white text-lg font-bold`}>
+                          {req.icon || '⬡'}
+                        </div>
+                        <div>
+                          <p className="text-sm font-bold text-slate-800">{req.name}</p>
+                          <p className="text-xs font-semibold text-slate-500">{req.domain}</p>
+                        </div>
+                      </div>
+                    </td>
+                    <td className="px-6 py-4">
+                      <p className="text-sm font-bold text-slate-800">{req.creatorName}</p>
+                      <p className="text-xs font-semibold text-slate-500">{req.creatorRole}</p>
+                    </td>
+                    <td className="px-6 py-4 text-sm font-bold text-slate-600">
+                      {req.location}
+                    </td>
+                    <td className="px-6 py-4 text-right">
+                      <div className="flex items-center justify-end gap-2">
+                        <button 
+                          onClick={() => onApproveCircle?.(req.id)}
+                          className="flex items-center gap-2 px-4 py-2 bg-blue-600 rounded-xl text-xs font-bold text-white hover:bg-blue-700 transition-colors"
+                        >
+                          <CheckCircle size={14} /> Approve
+                        </button>
+                        <button 
+                          onClick={() => onRejectCircle?.(req.id)}
+                          className="flex items-center gap-2 px-4 py-2 bg-rose-50 text-rose-600 rounded-xl text-xs font-bold hover:bg-rose-100 transition-colors"
+                        >
+                          <XCircle size={14} /> Reject
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          {(creationRequests?.length || 0) === 0 && (
+            <div className="py-20 text-center">
+              <p className="text-slate-500 font-bold">No pending circle requests.</p>
+            </div>
+          )}
+        </div>
+      )}
+
+      {activeTab === 'membership' && (
+        <div className="bg-white rounded-3xl border border-slate-100 shadow-sm overflow-hidden animate-in fade-in slide-in-from-bottom-2">
+          <div className="overflow-x-auto">
+            <table className="w-full text-left border-collapse">
+              <thead>
+                <tr className="bg-slate-50 border-b border-slate-100">
+                  <th className="px-6 py-4 text-xs font-extrabold text-slate-500 uppercase tracking-wider">Circle</th>
+                  <th className="px-6 py-4 text-xs font-extrabold text-slate-500 uppercase tracking-wider">Applicant</th>
+                  <th className="px-6 py-4 text-xs font-extrabold text-slate-500 uppercase tracking-wider">Status</th>
                   <th className="px-6 py-4 text-xs font-extrabold text-slate-500 uppercase tracking-wider text-right">Actions</th>
                 </tr>
               </thead>
@@ -129,21 +189,21 @@ export default function GroupManagementSection({ groups, requests, onAccept, onR
                   <tr key={req.id} className="hover:bg-slate-50/50 transition-colors group">
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center text-blue-600 font-bold text-sm">
-                          {req.groupName?.[0] || 'G'}
+                        <div className={`w-10 h-10 rounded-xl bg-gradient-to-br ${req.avatarBg || 'from-blue-500 to-blue-300'} flex items-center justify-center text-white font-bold text-sm`}>
+                          {req.groupName?.[0] || 'C'}
                         </div>
                         <div>
                           <p className="text-sm font-bold text-slate-800">{req.groupName}</p>
-                          <p className="text-xs font-semibold text-slate-500">{req.domain || 'Tech'}</p>
+                          <p className="text-xs font-semibold text-slate-500">{req.domain || 'Networking'}</p>
                         </div>
                       </div>
                     </td>
                     <td className="px-6 py-4">
                       <p className="text-sm font-bold text-slate-800">{req.userName}</p>
-                      <p className="text-xs font-semibold text-slate-500">Member ID: {req.userId}</p>
+                      <p className="text-xs font-semibold text-slate-500">{req.role}</p>
                     </td>
-                    <td className="px-6 py-4 text-sm font-bold text-slate-600">
-                      Just now
+                    <td className="px-6 py-4 text-sm font-bold text-slate-600 tracking-tight">
+                      Waiting Review
                     </td>
                     <td className="px-6 py-4 text-right">
                       <div className="flex items-center justify-end gap-2">
@@ -151,7 +211,7 @@ export default function GroupManagementSection({ groups, requests, onAccept, onR
                           onClick={() => onAccept?.(req.id)}
                           className="flex items-center gap-2 px-4 py-2 bg-emerald-500 rounded-xl text-xs font-bold text-white hover:bg-emerald-600 transition-colors"
                         >
-                          <CheckCircle size={14} /> Approve
+                          <CheckCircle size={14} /> Accept
                         </button>
                         <button 
                           onClick={() => onReject?.(req.id)}
@@ -168,7 +228,7 @@ export default function GroupManagementSection({ groups, requests, onAccept, onR
           </div>
           {(requests?.length || 0) === 0 && (
             <div className="py-20 text-center">
-              <p className="text-slate-500 font-bold">No pending group requests found.</p>
+              <p className="text-slate-500 font-bold">No pending join requests.</p>
             </div>
           )}
         </div>

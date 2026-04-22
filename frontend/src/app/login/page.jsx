@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import api from "@/lib/axios";
 import { GoogleLogin } from "@react-oauth/google";
+import { useProfile } from "@/lib/useProfile";
 
 const GoogleIcon = () => (
   <svg className="w-4 h-4" viewBox="0 0 24 24">
@@ -21,6 +22,7 @@ export default function LoginPage() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const { login } = useProfile();
 
   const handleGoogleSuccess = async (credentialResponse) => {
     setLoading(true);
@@ -29,9 +31,7 @@ export default function LoginPage() {
       const { data } = await api.post("/user/google-login", { 
         idToken: credentialResponse.credential 
       });
-      localStorage.setItem("token", data.token);
-      localStorage.setItem("userId", data.user.id);
-      localStorage.setItem("userName", data.user.name);
+      login(data.token, data.user);
       router.push("/profile");
     } catch (err) {
       setError(err.response?.data?.message || "Google sign-in failed.");
@@ -46,9 +46,7 @@ export default function LoginPage() {
     setLoading(true);
     try {
       const { data } = await api.post("/user/login", { email, password });
-      localStorage.setItem("token", data.token);
-      localStorage.setItem("userId", data.user.id);
-      localStorage.setItem("userName", data.user.name);
+      login(data.token, data.user);
       router.push("/profile");
     } catch (err) {
       setError(err.response?.data?.message || err.response?.data?.error || "Login failed. Please try again.");

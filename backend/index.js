@@ -6,7 +6,6 @@ const http = require('http');
 const { Server } = require('socket.io');
 
 const UserRouter = require('./routers/UserRouter');
-const GroupRouter = require('./routers/GroupRouter');
 const MessageRouter = require('./routers/MessageRouter');
 const ActivityRouter = require('./routers/ActivityRouter');
 const circleRouter = require('./routers/CircleRouter');
@@ -29,7 +28,6 @@ app.use('/uploads', express.static('public/uploads'));
 
 // Routes
 app.use('/user', UserRouter);
-app.use('/group', GroupRouter);
 app.use('/api/messages', MessageRouter);
 app.use('/api', ActivityRouter); // Events, Polls, legacy Notifications
 app.use('/api/circles', circleRouter);

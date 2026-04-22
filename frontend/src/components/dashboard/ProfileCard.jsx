@@ -40,7 +40,7 @@ const ProfileCard = () => {
             <ShieldCheck size={18} className="text-blue-500 shrink-0" />
           </div>
           <p className="text-sm font-medium text-slate-500 truncate mb-2">
-            {user?.headline || user?.role || "Add your headline"}
+            {user?.headline || user?.category || "Add your headline"}
           </p>
           
           <div className="inline-flex items-center gap-1.5 bg-amber-50 px-2 py-0.5 rounded-lg border border-amber-100">

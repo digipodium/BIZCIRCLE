@@ -5,10 +5,10 @@ import { Users, MapPin, ChevronRight, Plus, Loader2 } from "lucide-react";
 import Link from "next/link";
 import api from "@/lib/axios";
 
-const CircleCard = ({ _id, name, domain, location, members, isJoined, icon, color, description, memberCount, type }) => {
+const CircleCard = ({ _id, name, domain, location, members, isJoined: propIsJoined, icon, color, description, memberCount, type }) => {
   const { earnPoints } = usePoints();
   const { fetchProfile } = useProfile();
-  const [joined, setJoined] = useState(isJoined);
+  const [joined, setJoined] = useState(propIsJoined);
   const [isJoining, setIsJoining] = useState(false);
 
   const handleJoin = async () => {
@@ -16,8 +16,8 @@ const CircleCard = ({ _id, name, domain, location, members, isJoined, icon, colo
     
     setIsJoining(true);
     try {
-      const endpoint = type === 'group' ? `/group/${_id}/join` : "/api/circles/join";
-      const payload = type === 'group' ? {} : { circleId: _id };
+      const endpoint = "/api/circles/join";
+      const payload = { circleId: _id };
       
       await api.post(endpoint, payload);
       setJoined(true);
@@ -63,18 +63,16 @@ const CircleCard = ({ _id, name, domain, location, members, isJoined, icon, colo
           ))}
         </div>
         
-        <div className={`
-          flex items-center gap-1.5 px-4 py-2 rounded-lg text-xs font-bold transition-all
-          ${joined 
-            ? "text-blue-600 group-hover:translate-x-1" 
-            : "bg-blue-600 text-white shadow-md shadow-blue-100"}
-        `}>
-          {joined ? (
-            <>View Details <ChevronRight size={14} /></>
-          ) : (
-            <>Join Circle <Plus size={14} /></>
-          )}
-        </div>
+        {!joined && (
+          <div className="flex items-center gap-1.5 px-4 py-2 rounded-lg text-xs font-bold transition-all bg-blue-600 text-white shadow-md shadow-blue-100">
+            Join Circle <Plus size={14} />
+          </div>
+        )}
+        {joined && (
+          <div className="flex items-center gap-1 text-xs font-bold text-blue-600 group-hover:translate-x-1 transition-transform">
+            View Details <ChevronRight size={14} />
+          </div>
+        )}
       </div>
     </Link>
   );

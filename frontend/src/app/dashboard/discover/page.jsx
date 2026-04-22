@@ -132,14 +132,14 @@ function UserCard({ user, query = "" }) {
 }
 
 /* ─────────────────────────────────────────────────────────────────────────────
-   GROUP CARD
+   CIRCLE CARD
 ───────────────────────────────────────────────────────────────────────────── */
-function GroupCard({ group, query = "" }) {
+function CircleCard({ group, query = "" }) {
   const [status, setStatus] = useState("idle");
 
   const handleJoin = async () => {
     setStatus("loading");
-    try { await api.post(`/group/${group._id}/join`); } catch { /* optimistic */ }
+    try { await api.post(`/api/circles/join`, { circleId: group._id }); } catch { /* optimistic */ }
     setStatus("done");
   };
 
@@ -177,8 +177,8 @@ function GroupCard({ group, query = "" }) {
         }`}
       >
         {status === "loading" ? <Loader2 size={14} className="animate-spin" />
-          : status === "done" ? "✓ Joined"
-          : <><Users size={14} /> Join Group</>}
+          : status === "done" ? "✓ Request Sent"
+          : <><Users size={14} /> Join Circle</>}
       </button>
     </div>
   );
@@ -238,7 +238,7 @@ function ExploreContent() {
   useEffect(() => {
     Promise.all([
       api.get("/api/discover/users").catch(() => ({ data: [] })),
-      api.get("/api/discover/groups").catch(() => ({ data: [] })),
+      api.get("/api/circles").catch(() => ({ data: [] })),
     ]).then(([u, g]) => {
       setDiscoverUsers(u.data || []);
       setDiscoverGroups(g.data || []);
@@ -286,7 +286,7 @@ function ExploreContent() {
               <h1 className="text-3xl font-bold text-slate-900">Explore</h1>
             </div>
             <p className="text-slate-500 text-sm ml-12">
-              Discover people and groups — or search by name, skill, or topic
+              Discover people and circles — or search by name, skill, or topic
             </p>
           </div>
 
@@ -301,7 +301,7 @@ function ExploreContent() {
                 type="text"
                 value={query}
                 onChange={e => setQuery(e.target.value)}
-                placeholder="Search people, skills, groups..."
+                placeholder="Search people, skills, circles..."
                 className="flex-1 bg-transparent text-sm text-slate-800 placeholder-slate-400 outline-none"
                 autoFocus
               />
@@ -422,7 +422,7 @@ function ExploreContent() {
               <section>
                 <SectionHeader
                   icon={<Users size={15} className="text-blue-500" />}
-                  title="Suggested Groups"
+                  title="Suggested Circles"
                 />
                 {loadingDiscover ? (
                   <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -430,12 +430,12 @@ function ExploreContent() {
                   </div>
                 ) : discoverGroups.length === 0 ? (
                   <div className="bg-white rounded-2xl border border-slate-100 p-8 text-center text-slate-400 text-sm shadow-sm">
-                    No group suggestions right now
+                    No circle suggestions right now
                   </div>
                 ) : (
                   <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
                     {discoverGroups.map(g => (
-                      <GroupCard key={g._id} group={g} />
+                      <CircleCard key={g._id} group={g} />
                     ))}
                   </div>
                 )}

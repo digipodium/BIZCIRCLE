@@ -120,7 +120,7 @@ export default function PublicProfilePage() {
                 {/* Name & Headline */}
                 <div className="text-center mb-5">
                   <h1 className="text-xl font-bold text-slate-800 tracking-tight">{user.name}</h1>
-                  <p className="text-sm text-blue-600 font-medium mt-0.5">{user.headline || user.role}</p>
+                  <p className="text-sm text-blue-600 font-medium mt-0.5">{user.headline || user.category}</p>
                   {user.location && (
                     <div className="flex items-center justify-center gap-1 mt-2 text-slate-400 text-xs">
                       <MapPin size={12} />

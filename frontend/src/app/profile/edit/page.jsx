@@ -34,6 +34,7 @@ export default function EditProfilePage() {
     github: "",
     linkedin: "",
     profilePicture: "",
+    category: "",
   });
 
   useEffect(() => {
@@ -47,6 +48,7 @@ export default function EditProfilePage() {
         github: user.github || "",
         linkedin: user.linkedin || "",
         profilePicture: user.profilePicture || "",
+        category: user.category || "",
       });
     }
   }, [user]);
@@ -243,6 +245,30 @@ export default function EditProfilePage() {
                     placeholder="Writie a short bio about yourself..."
                     className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all outline-none text-sm resize-none"
                   />
+                </div>
+              </div>
+
+              <div>
+                <label className="text-xs font-bold text-slate-400 uppercase tracking-wider block mb-2">I am a...</label>
+                <div className="relative">
+                  <User className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
+                  <select 
+                    name="category"
+                    value={form.category}
+                    onChange={handleChange}
+                    className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all outline-none text-sm appearance-none cursor-pointer"
+                  >
+                    <option value="">Select Category</option>
+                    <option value="Entrepreneur">Entrepreneur</option>
+                    <option value="Student">Student</option>
+                    <option value="Professional">Professional</option>
+                    <option value="Freelancer">Freelancer</option>
+                    <option value="Investor">Investor</option>
+                    <option value="Other">Other</option>
+                  </select>
+                  <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path></svg>
+                  </div>
                 </div>
               </div>
             </div>

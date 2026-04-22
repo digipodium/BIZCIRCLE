@@ -78,14 +78,14 @@ function UserSuggestionCard({ user }) {
   );
 }
 
-// ─── Group Suggestion Card ────────────────────────────────────────────────────
-function GroupSuggestionCard({ group }) {
+// ─── Circle Suggestion Card ────────────────────────────────────────────────────
+function CircleSuggestionCard({ group }) {
   const [status, setStatus] = useState("idle");
 
   const handleJoin = async () => {
     setStatus("joining");
     try {
-      await api.post(`/group/${group._id}/join`);
+      await api.post(`/api/circles/join`, { circleId: group._id });
     } catch {
       // optimistic
     } finally {
@@ -129,10 +129,10 @@ function GroupSuggestionCard({ group }) {
         {status === "joining" ? (
           <Loader2 size={12} className="animate-spin" />
         ) : status === "done" ? (
-          "✓ Joined"
+          "✓ Requested"
         ) : (
           <>
-            <Users size={12} /> Join Group
+            <Users size={12} /> Join Circle
           </>
         )}
       </button>
@@ -210,9 +210,9 @@ const DiscoverSection = () => {
       .catch(() => {})
       .finally(() => setLoadingUsers(false));
 
-    // Fetch suggested groups
-    api.get("/api/discover/groups")
-      .then(({ data }) => setSuggestedGroups(data))
+    // Fetch suggested circles
+    api.get("/api/circles")
+      .then(({ data }) => setSuggestedGroups(data.slice(0, 5)))
       .catch(() => {})
       .finally(() => setLoadingGroups(false));
   }, []);
@@ -239,16 +239,16 @@ const DiscoverSection = () => {
         ))}
       </DiscoverRow>
 
-      {/* Suggested Groups */}
+      {/* Suggested Circles */}
       <DiscoverRow
-        title="Suggested Groups"
+        title="Suggested Circles"
         icon={<Users size={14} className="text-blue-500" />}
         loading={loadingGroups}
         empty={!loadingGroups && suggestedGroups.length === 0}
-        viewAllHref="/dashboard/search?q="
+        viewAllHref="/dashboard/circles"
       >
         {suggestedGroups.map((g) => (
-          <GroupSuggestionCard key={g._id} group={g} />
+          <CircleSuggestionCard key={g._id} group={g} />
         ))}
       </DiscoverRow>
     </div>

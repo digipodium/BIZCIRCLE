@@ -42,9 +42,12 @@ const Sidebar = () => {
     { name: "Support", icon: MessageSquareWarning, href: "/support" },
   ];
 
-  const isAdmin = user?.role?.toLowerCase() === 'admin';
+  const isAdmin = user?.role?.toLowerCase() === 'admin' || user?.isCircleAdmin;
   if (isAdmin) {
     menuItems.push({ name: "Admin Dashboard", icon: Shield, href: "/admin" });
+  }
+
+  if (user?.role?.toLowerCase() === 'admin') {
     menuItems.push({ name: "Moderation", icon: ShieldAlert, href: "/admin/moderation" });
   }
 

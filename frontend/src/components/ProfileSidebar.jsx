@@ -78,7 +78,7 @@ export default function ProfileSidebar() {
                 {user?.name || "Your Name"}
               </h1>
               <p className="text-sm text-blue-600 font-medium mt-0.5">
-                {user?.headline || user?.role || "Add your headline"}
+                {user?.headline || user?.category || "Add your headline"}
               </p>
               {user?.location && (
                 <div className="flex items-center justify-center gap-1 mt-2 text-slate-400 text-xs">

@@ -37,6 +37,24 @@ export function ProfileProvider({ children }) {
     }
   };
 
+  const logout = () => {
+    localStorage.removeItem("token");
+    localStorage.removeItem("userId");
+    localStorage.removeItem("userName");
+    setUser(null);
+  };
+
+  const login = (token, userData) => {
+    localStorage.setItem("token", token);
+    if (userData) {
+      localStorage.setItem("userId", userData.id || userData._id);
+      localStorage.setItem("userName", userData.name);
+      setUser(userData);
+    }
+    // Optionally fetch full profile to ensure consistency
+    fetchProfile();
+  };
+
   useEffect(() => {
     // Only fetch profile if token exists
     const token = localStorage.getItem("token");
@@ -48,7 +66,7 @@ export function ProfileProvider({ children }) {
   }, []);
 
   return (
-    <ProfileContext.Provider value={{ user, loading, error, fetchProfile, updateProfile }}>
+    <ProfileContext.Provider value={{ user, loading, error, fetchProfile, updateProfile, login, logout }}>
       {children}
     </ProfileContext.Provider>
   );

@@ -13,6 +13,11 @@ const userSchema = new mongoose.Schema({
     enum: ["user", "admin", "moderator"], 
     default: "user" 
   },
+  category: {
+    type: String,
+    enum: ["Entrepreneur", "Student", "Professional", "Freelancer", "Investor", "Other"],
+    default: "Other"
+  },
   status: {
     type: String,
     enum: ["Active", "Suspended", "Banned"],

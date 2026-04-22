@@ -13,14 +13,19 @@ export default function CircleDetailPage({ params }) {
   const unwrappedParams = use(params);
   const { circleId } = unwrappedParams;
   const [circle, setCircle] = useState(null);
+  const [circleMembers, setCircleMembers] = useState([]);
+  const [isJoined, setIsJoined] = useState(false);
   const [activeTab, setActiveTab] = useState('meetings');
   const [loading, setLoading] = useState(true);
+  const [isJoining, setIsJoining] = useState(false);
 
   useEffect(() => {
     const fetchCircle = async () => {
       try {
         const { data } = await api.get(`/api/circles/${circleId}`);
-        setCircle(data);
+        setCircle(data.circle);
+        setCircleMembers(data.members || []);
+        setIsJoined(data.isJoined || false);
       } catch (err) {
         console.error("Failed to fetch circle:", err);
       } finally {
@@ -29,6 +34,21 @@ export default function CircleDetailPage({ params }) {
     };
     fetchCircle();
   }, [circleId]);
+
+  const handleJoin = async () => {
+    if (isJoined || isJoining) return;
+    setIsJoining(true);
+    try {
+      await api.post('/api/circles/join', { circleId });
+      alert("Join request sent! Please wait for admin approval if the circle is private.");
+      // Refresh to check if it's auto-approved or pending
+      window.location.reload();
+    } catch (err) {
+      alert(err.response?.data?.error || "Failed to join");
+    } finally {
+      setIsJoining(false);
+    }
+  };
 
   if (loading) {
     return (
@@ -101,31 +121,54 @@ export default function CircleDetailPage({ params }) {
             </div>
           </div>
 
-          {/* Navigation */}
-          <div className="flex gap-2 p-1.5 bg-white rounded-2xl border border-slate-100 shadow-sm w-fit">
-            {tabs.map((tab) => {
-              const Icon = tab.icon;
-              const isActive = activeTab === tab.id;
-              return (
-                <button
-                  key={tab.id}
-                  onClick={() => setActiveTab(tab.id)}
-                  className={`flex items-center gap-2 px-6 py-3 rounded-xl text-sm font-bold transition-all ${
-                    isActive ? 'bg-blue-600 text-white shadow-lg shadow-blue-100' : 'text-slate-500 hover:bg-slate-50'
-                  }`}
-                >
-                  <Icon size={16} /> {tab.label}
-                </button>
-              );
-            })}
-          </div>
+          {!isJoined ? (
+            /* Membership Required View */
+            <div className="bg-white rounded-[2.5rem] p-12 border border-slate-100 shadow-sm text-center animate-in fade-in zoom-in duration-500">
+               <div className="w-20 h-20 bg-blue-50 rounded-full flex items-center justify-center mx-auto mb-6">
+                 <Shield size={40} className="text-blue-600" />
+               </div>
+               <h2 className="text-3xl font-black text-slate-900 mb-4">Membership Required</h2>
+               <p className="text-slate-500 text-lg max-w-xl mx-auto mb-10 leading-relaxed">
+                 This is a professional community. To access the chat, meetings, and member list, you must first join the circle.
+               </p>
+               <button 
+                 onClick={handleJoin}
+                 disabled={isJoining}
+                 className="px-10 py-4 bg-blue-600 text-white rounded-2xl font-black text-lg hover:bg-blue-700 transition-all shadow-xl shadow-blue-100 flex items-center gap-3 mx-auto disabled:opacity-50"
+               >
+                 {isJoining ? "Processing..." : "Join This Circle"}
+               </button>
+            </div>
+          ) : (
+            /* Full Member View */
+            <>
+              {/* Navigation */}
+              <div className="flex gap-2 p-1.5 bg-white rounded-2xl border border-slate-100 shadow-sm w-fit">
+                {tabs.map((tab) => {
+                  const Icon = tab.icon;
+                  const isActive = activeTab === tab.id;
+                  return (
+                    <button
+                      key={tab.id}
+                      onClick={() => setActiveTab(tab.id)}
+                      className={`flex items-center gap-2 px-6 py-3 rounded-xl text-sm font-bold transition-all ${
+                        isActive ? 'bg-blue-600 text-white shadow-lg shadow-blue-100' : 'text-slate-500 hover:bg-slate-50'
+                      }`}
+                    >
+                      <Icon size={16} /> {tab.label}
+                    </button>
+                  );
+                })}
+              </div>
 
-          {/* Content */}
-          <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
-             {activeTab === 'meetings' && <EventsTab targetId={circleId} targetModel="Circle" members={[]} />}
-             {activeTab === 'chat' && <ChatTab groupId={circleId} />}
-             {activeTab === 'members' && <MembersTab members={circle.members || []} />}
-          </div>
+              {/* Content */}
+              <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
+                {activeTab === 'meetings' && <EventsTab targetId={circleId} targetModel="Circle" members={[]} />}
+                {activeTab === 'chat' && <ChatTab groupId={circleId} />}
+                {activeTab === 'members' && <MembersTab members={circleMembers} />}
+              </div>
+            </>
+          )}
         </div>
       </main>
     </div>

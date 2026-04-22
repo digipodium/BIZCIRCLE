@@ -4,6 +4,7 @@ const Group = require('../models/groupModel');
 const Activity = require('../models/activityModel');
 const mongoose = require('mongoose');
 const Circle = require('../models/circleModel');
+const CircleMember = require('../models/circleMemberModel');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const { createNotification } = require('./notificationController');
@@ -17,7 +18,7 @@ const JWT_SECRET = process.env.JWT_SECRET || 'mytopseret';
 // POST /user/signup
 const signup = async (req, res) => {
   try {
-    const { firstName, lastName, email, password, role } = req.body;
+    const { firstName, lastName, email, password, category } = req.body;
 
     if (!firstName || !lastName || !email || !password) {
       return res.status(400).json({ message: 'All fields are required' });
@@ -35,7 +36,8 @@ const signup = async (req, res) => {
       name,
       email,
       password: hashedPassword,
-      role: role || 'user',
+      role: 'user',
+      category: category || 'Other',
       points: 50, // Initial points for profile creation/completion
     });
 
@@ -116,7 +118,8 @@ const googleLogin = async (req, res) => {
         email,
         googleId,
         profilePicture: picture,
-        role: 'Professional',
+        role: 'user',
+        category: 'Professional',
         points: 50,
       });
     } else if (!user.googleId) {
@@ -156,15 +159,19 @@ const getUserProfile = async (req, res) => {
       return res.status(404).json({ message: 'User not found' });
     }
 
-    // Fetch joined groups from the GroupMember system
-    const memberships = await GroupMember.find({ user: req.user.id, status: 'Approved' })
-      .populate('group', 'name domain location description icon color');
+    // Fetch joined circles from the CircleMember system
+    const memberships = await CircleMember.find({ user: req.user.id, status: 'Approved' })
+      .populate('circle', 'name domain location description icon color');
 
     const joinedGroups = memberships
-      .map(m => m.group)
+      .map(m => m.circle)
       .filter(g => g !== null);
 
-    res.json({ ...user.toObject(), joinedGroups });
+    // Check if user is an admin of ANY circle
+    const adminCheck = memberships.some(m => m.role === 'Admin');
+    const isCircleAdmin = adminCheck || user.role === 'admin';
+
+    res.json({ ...user.toObject(), joinedGroups, isCircleAdmin });
   } catch (err) {
     console.error('Get profile error:', err);
     res.status(500).json({ message: err.message || 'Server error' });
@@ -175,7 +182,7 @@ const getUserProfile = async (req, res) => {
 const updateUserProfile = async (req, res) => {
   try {
     const allowedFields = [
-      'name', 'bio', 'skills', 'role', 'organization',
+      'name', 'bio', 'skills', 'role', 'category', 'organization',
       'phone', 'dob', 'location', 'website', 'github', 'linkedin',
       'headline', 'experience', 'projects', 'education', 'profilePicture',
     ];
@@ -371,7 +378,7 @@ const getUserAnalytics = async (req, res) => {
 // GET /user/all
 const getAllUsers = async (req, res) => {
   try {
-    const users = await User.find({}).select('name profilePicture headline role organization');
+    const users = await User.find({}).select('name profilePicture headline role organization circles');
     res.json(users);
   } catch (err) {
     console.error('Get all users error:', err);

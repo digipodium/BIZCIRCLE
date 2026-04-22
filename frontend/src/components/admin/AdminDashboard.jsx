@@ -21,6 +21,7 @@ import LogsSection from "./sections/LogsSection";
 export default function AdminDashboard() {
   const [groups, setGroups] = useState([]);
   const [requests, setRequests] = useState([]);
+  const [creationRequests, setCreationRequests] = useState([]);
   const [showModal, setShowModal] = useState(false);
   const [activeSection, setActiveSection] = useState("overview");
   const [toast, setToast] = useState(null);
@@ -40,9 +41,10 @@ export default function AdminDashboard() {
         return;
       }
 
-      const res = await api.get('/group/admin/dashboard');
+      const res = await api.get('/api/circles/admin/dashboard');
       setGroups(res.data.groups);
       setRequests(res.data.requests);
+      setCreationRequests(res.data.circleCreationRequests || []);
     } catch (err) {
       console.error('Dashboard fetch error:', err);
       const errorMsg = err.response?.data?.message || err.message || "Failed to load dashboard data";
@@ -64,7 +66,7 @@ export default function AdminDashboard() {
     try {
       const req = requests.find((r) => r.id === id);
       if (!req) return;
-      await api.put(`/group/${req.groupId}/members/${id}`, { status: 'Approved' });
+      await api.put(`/api/circles/${req.groupId}/members/${id}`, { status: 'Approved' });
       fetchDashboardData();
       showToast(`${req.userName} has been accepted into ${req.groupName}`, "success");
     } catch (err) {
@@ -76,11 +78,31 @@ export default function AdminDashboard() {
     try {
       const req = requests.find((r) => r.id === id);
       if (!req) return;
-      await api.put(`/group/${req.groupId}/members/${id}`, { status: 'Banned' });
+      await api.put(`/api/circles/${req.groupId}/members/${id}`, { status: 'Banned' });
       fetchDashboardData();
       showToast(`${req.userName}'s request has been rejected`, "error");
     } catch (err) {
       showToast("Failed to reject request", "error");
+    }
+  };
+
+  const handleApproveCircle = async (id) => {
+    try {
+      await api.put(`/api/circles/admin/review/${id}`, { status: 'Approved' });
+      fetchDashboardData();
+      showToast("Circle approved and is now live!", "success");
+    } catch (err) {
+      showToast("Failed to approve circle", "error");
+    }
+  };
+
+  const handleRejectCircle = async (id) => {
+    try {
+      await api.put(`/api/circles/admin/review/${id}`, { status: 'Rejected' });
+      fetchDashboardData();
+      showToast("Circle creation request rejected", "error");
+    } catch (err) {
+      showToast("Failed to reject circle", "error");
     }
   };
 
@@ -92,7 +114,7 @@ export default function AdminDashboard() {
         return;
       }
 
-      await api.post('/group', {
+      await api.post('/api/circles', {
         ...newGroup,
         isPrivate: true,
         description: `Welcome to ${newGroup.name}`
@@ -119,8 +141,11 @@ export default function AdminDashboard() {
           <GroupManagementSection
             groups={groups}
             requests={requests}
+            creationRequests={creationRequests}
             onAccept={handleAccept}
             onReject={handleReject}
+            onApproveCircle={handleApproveCircle}
+            onRejectCircle={handleRejectCircle}
           />
         );
       case "moderation":
@@ -172,78 +197,22 @@ export default function AdminDashboard() {
       {loading ? (
         <div className="flex flex-col items-center justify-center min-h-[60vh] text-slate-400">
           <div className="w-12 h-12 border-4 border-slate-200 border-t-blue-600 rounded-full animate-spin mb-4" />
-          <p className="font-bold">Syncing Platform Data...</p>
+          <p className="font-bold text-lg">Syncing Platform Data...</p>
         </div>
       ) : (
-        <div className="animate-in fade-in duration-700">
+        <div className="animate-in fade-in duration-700 p-6">
           {renderSection()}
         </div>
-      </nav>
+      )}
 
-      {/* Main Content */ }
-  <main style={{ maxWidth: "1200px", margin: "0 auto", padding: "36px 24px" }}>
-    {loading ? (
-      <div style={{ textAlign: "center", padding: "100px", color: "#6b7280" }}>
-        <div style={{
-          width: "40px",
-          height: "40px",
-          border: "3px solid #e5e7eb",
-          borderTop: "3px solid #2563eb",
-          borderRadius: "50%",
-          animation: "spin 1s linear infinite",
-          margin: "0 auto 20px"
-        }} />
-        <p>Loading dashboard...</p>
-      </div>
-    ) : (
-      <>
-        <div className="fade-up">
-          <AdminHeader
-            groupCount={groups.length}
-            maxGroups={3}
-            onCreateGroup={() => setShowModal(true)}
-          />
-        </div>
-
-
-        <div className="fade-up" style={{ animationDelay: "0.1s" }}>
-          <StatsSection
-            totalGroups={groups.length}
-            totalMembers={totalMembers}
-            pendingRequests={requests.length}
-          />
-        </div>
-
-        <div className="fade-up" style={{ animationDelay: "0.2s" }}>
-          <ConstraintBanner />
-        </div>
-
-        <div className="fade-up" style={{ animationDelay: "0.25s" }}>
-          <GroupsSection groups={groups} />
-        </div>
-
-        <div className="fade-up" style={{ animationDelay: "0.3s" }}>
-          <JoinRequestsSection
-            requests={requests}
-            onAccept={handleAccept}
-            onReject={handleReject}
-          />
-        </div>
-      </>
-    )
-    }
-  </main >
-
-  {/* Create Group Modal */ }
-  {
-    showModal && (
-      <CreateGroupModal
-        currentGroupCount={groups.length}
-        onClose={() => setShowModal(false)}
-        onCreate={handleCreateGroup}
-      />
-    )
-  }
-    </AdminLayout >
+      {/* Create Circle Modal */}
+      {showModal && (
+        <CreateGroupModal
+          currentGroupCount={groups.length}
+          onClose={() => setShowModal(false)}
+          onCreate={handleCreateGroup}
+        />
+      )}
+    </AdminLayout>
   );
 }

@@ -10,13 +10,21 @@ const createReferral = async (req, res) => {
         const { candidateName, candidateEmail, targetCircle, role, message, receiverId } = req.body;
         const senderId = req.user.id;
         const senderName = req.user.name;
-
-        // Check if user has joined any circles
         const sender = await User.findById(senderId).select('circles');
         if (!sender.circles || sender.circles.length === 0) {
             return res.status(403).json({ 
                 message: 'You must join at least one circle to share referrals.' 
             });
+        }
+
+        // Check if receiver has joined any circles (if provided)
+        if (receiverId) {
+            const receiver = await User.findById(receiverId).select('circles');
+            if (!receiver || !receiver.circles || receiver.circles.length === 0) {
+                return res.status(400).json({ 
+                    message: 'The selected member has not joined any circles yet.' 
+                });
+            }
         }
 
         // Generate verification token (32 chars)

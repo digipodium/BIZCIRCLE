@@ -56,11 +56,9 @@ export default function LogReferralModal({ isOpen, onClose, onSuccess }) {
 
     Promise.all([
       api.get(`/api/circles/mutual/${formData.receiverId}`).catch(() => ({ data: [] })),
-      api.get(`/group/mutual/${formData.receiverId}`).catch(() => ({ data: [] })),
-    ]).then(([circlesRes, groupsRes]) => {
+    ]).then(([circlesRes]) => {
       const allMutual = [
         ...(circlesRes.data || []),
-        ...(groupsRes.data || []),
       ];
       
       if (allMutual.length > 0) {
@@ -150,7 +148,9 @@ export default function LogReferralModal({ isOpen, onClose, onSuccess }) {
               required
             >
               <option value="">Choose a connection you met with...</option>
-              {users.map(u => (
+              {users
+                .filter(u => u.circles && u.circles.length > 0)
+                .map(u => (
                 <option key={u._id} value={u._id}>
                   {u.name} {u.headline ? `- ${u.headline}` : ''}
                 </option>
