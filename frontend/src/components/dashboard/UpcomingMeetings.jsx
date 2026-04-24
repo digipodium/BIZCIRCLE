@@ -33,11 +33,7 @@ export default function UpcomingMeetings() {
           <h3 className="text-xl font-black text-slate-800">Your Meetings</h3>
           <p className="text-xs text-slate-400 font-bold uppercase tracking-wider mt-1">Upcoming Sessions</p>
         </div>
-        {(user?.hasOpenedCircle || user?.role?.toLowerCase() === 'admin') && (
-          <Link href="/dashboard/referrals" className="p-2 bg-slate-50 text-slate-400 rounded-xl hover:bg-blue-50 hover:text-blue-600 transition-all">
-            <ArrowRight size={20} />
-          </Link>
-        )}
+
       </div>
 
       {loading ? (

@@ -153,7 +153,7 @@ const getUserProfile = async (req, res) => {
   try {
     const user = await User.findById(req.user.id)
       .select('-password')
-      .populate('circles', 'name domain location members');
+      .populate('circles', 'name domain location members createdBy');
 
     if (!user) {
       return res.status(404).json({ message: 'User not found' });
@@ -161,11 +161,14 @@ const getUserProfile = async (req, res) => {
 
     // Fetch joined circles from the CircleMember system
     const memberships = await CircleMember.find({ user: req.user.id, status: 'Approved' })
-      .populate('circle', 'name domain location description icon color');
+      .populate('circle', 'name domain location description icon color createdBy');
 
     const joinedGroups = memberships
-      .map(m => m.circle)
-      .filter(g => g !== null);
+      .filter(m => m.circle !== null)
+      .map(m => ({
+        ...m.circle.toObject(),
+        membershipRole: m.role
+      }));
 
     // Check if user is an admin of ANY circle
     const adminCheck = memberships.some(m => m.role === 'Admin');

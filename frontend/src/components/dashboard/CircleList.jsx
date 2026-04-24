@@ -1,15 +1,39 @@
 import React, { useState } from "react";
 import { usePoints } from "@/context/PointsContext";
 import { useProfile } from "@/lib/useProfile";
-import { Users, MapPin, ChevronRight, Plus, Loader2 } from "lucide-react";
+import { Users, MapPin, ChevronRight, Plus, Loader2, Trash2 } from "lucide-react";
 import Link from "next/link";
 import api from "@/lib/axios";
 
-const CircleCard = ({ _id, name, domain, location, members, isJoined: propIsJoined, icon, color, description, memberCount, type }) => {
+const CircleCard = ({ _id, name, domain, location, members, isJoined: propIsJoined, icon, color, description, memberCount, type, createdBy, membershipRole }) => {
   const { earnPoints } = usePoints();
-  const { fetchProfile } = useProfile();
+  const { user, fetchProfile } = useProfile();
   const [joined, setJoined] = useState(propIsJoined);
   const [isJoining, setIsJoining] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+
+  const canDelete = user?.role?.toLowerCase() === 'admin' || 
+                    membershipRole === 'Admin' ||
+                    (createdBy && (createdBy._id || createdBy) === user?.id) ||
+                    (createdBy && (createdBy._id || createdBy) === user?._id);
+
+  const handleDelete = async (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+
+    if (!window.confirm(`Are you sure you want to delete "${name}"? This action cannot be undone.`)) return;
+
+    setIsDeleting(true);
+    try {
+      await api.delete(`/api/circles/${_id}`);
+      await fetchProfile(); // Refresh dashboard data
+    } catch (err) {
+      console.error("Failed to delete circle:", err);
+      alert(err.response?.data?.error || err.response?.data?.message || "Failed to delete circle");
+    } finally {
+      setIsDeleting(false);
+    }
+  };
 
   const handleJoin = async () => {
     if (joined || isJoining) return;
@@ -42,10 +66,20 @@ const CircleCard = ({ _id, name, domain, location, members, isJoined: propIsJoin
         <div className={`w-14 h-14 rounded-2xl ${color || 'bg-blue-600'} text-white flex items-center justify-center text-2xl font-black shadow-lg shadow-blue-100`}>
           {icon || name.charAt(0)}
         </div>
-        <div className="flex flex-col items-end">
+        <div className="flex flex-col items-end gap-2">
           <span className="text-[10px] font-black text-blue-600 bg-blue-50 px-2.5 py-1 rounded-full uppercase tracking-widest border border-blue-100">
             {domain}
           </span>
+          {canDelete && (
+            <button
+              onClick={handleDelete}
+              disabled={isDeleting}
+              className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all"
+              title="Delete Circle"
+            >
+              {isDeleting ? <Loader2 size={16} className="animate-spin" /> : <Trash2 size={16} />}
+            </button>
+          )}
         </div>
       </div>
 

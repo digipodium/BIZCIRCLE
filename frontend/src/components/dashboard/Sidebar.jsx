@@ -12,11 +12,7 @@ import {
   Star,
   Bell,
   MessageSquareWarning,
-  ShieldAlert,
-  Shield,
-  Send,
-  Search,
-  Globe
+  Search
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -36,25 +32,12 @@ const Sidebar = () => {
     { name: "Explore Circles", icon: Compass, href: "/dashboard/circles" },
     { name: "My Circles", icon: Users, href: "/dashboard/my-circles" },
     { name: "Discover", icon: Search, href: "/dashboard/discover" },
-    { name: "Referrals", icon: Send, href: "/dashboard/referrals" },
     { name: "Profile", icon: UserCircle, href: "/profile" },
     { name: "Notifications", icon: Bell, href: "/notifications" },
     { name: "Support", icon: MessageSquareWarning, href: "/support" },
-  ].filter(item => {
-    if (item.name === "Referrals") {
-      return user?.hasOpenedCircle || user?.role?.toLowerCase() === 'admin';
-    }
-    return true;
-  });
+  ];
 
-  const isAdmin = user?.role?.toLowerCase() === 'admin' || user?.isCircleAdmin;
-  if (isAdmin) {
-    menuItems.push({ name: "Admin Dashboard", icon: Shield, href: "/admin" });
-  }
 
-  if (user?.role?.toLowerCase() === 'admin') {
-    menuItems.push({ name: "Moderation", icon: ShieldAlert, href: "/admin/moderation" });
-  }
 
   const activeClass = "bg-blue-50 text-blue-600 font-semibold shadow-sm";
   const inactiveClass = "text-slate-600 hover:bg-slate-50 hover:text-blue-600 transition-all duration-200";

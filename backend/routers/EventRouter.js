@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const Event = require('../models/eventModel');
+const CircleMember = require('../models/circleMemberModel');
 const auth = require('../middleware/auth');
 
 // Get events for a group/circle
@@ -20,6 +21,20 @@ router.get('/:targetId', auth, async (req, res) => {
 router.post('/', auth, async (req, res) => {
     try {
         const { targetId, targetModel, title, description, dateTime, meetingLink } = req.body;
+        
+        // Authorization check for Circles
+        if (targetModel === 'Circle') {
+            const adminCheck = await CircleMember.findOne({
+                circle: targetId,
+                user: req.user.id,
+                role: 'Admin',
+                status: 'Approved'
+            });
+
+            if (!adminCheck && req.user.role !== 'admin') {
+                return res.status(403).json({ message: 'Only circle admins can schedule meetings' });
+            }
+        }
         
         const newEvent = await Event.create({
             targetId,

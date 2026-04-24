@@ -48,7 +48,7 @@ const MyCirclesPage = () => {
             <div className="xl:col-span-2">
               <CircleList 
                 title="Active Circles" 
-                circles={user?.circles || []} 
+                circles={user?.joinedGroups || []} 
                 loading={loading}
               />
             </div>

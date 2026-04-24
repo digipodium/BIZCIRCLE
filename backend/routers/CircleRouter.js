@@ -23,7 +23,7 @@ router.get('/', async (req, res) => {
             query.name = { $regex: search, $options: 'i' };
         }
 
-        const circles = await Circle.find(query).select('name domain location memberCount description relatedDomains color icon isPrivate status');
+        const circles = await Circle.find(query).select('name domain location memberCount description relatedDomains color icon isPrivate status createdBy');
 
         // If user is authenticated, check which circles they are joined in
         let enrichedCircles = circles.map(c => c.toObject());
@@ -78,10 +78,20 @@ router.get('/mutual/:otherUserId', auth, async (req, res) => {
 // GET Admin Dashboard Data
 router.get('/admin/dashboard', auth, async (req, res) => {
     try {
-        const adminMemberships = await CircleMember.find({ user: req.user.id, role: 'Admin' });
-        const circleIds = adminMemberships.map(m => m.circle);
+        const user = await User.findById(req.user.id);
+        let circleIds = [];
+        
+        if (user && user.role === 'admin') {
+            // Platform Admins see all circles in their management view
+            const allCircles = await Circle.find().select('_id');
+            circleIds = allCircles.map(c => c._id);
+        } else {
+            // Circle Admins only see circles they manage
+            const adminMemberships = await CircleMember.find({ user: req.user.id, role: 'Admin' });
+            circleIds = adminMemberships.map(m => m.circle);
+        }
 
-        const circles = await Circle.find({ _id: { $in: circleIds } }).lean();
+        const circles = await Circle.find({ _id: { $in: circleIds } }).populate('createdBy', 'name').lean();
 
         const dashboardCircles = await Promise.all(circles.map(async (circle) => {
             const membersCount = await CircleMember.countDocuments({ circle: circle._id, status: 'Approved' });
@@ -95,6 +105,7 @@ router.get('/admin/dashboard', auth, async (req, res) => {
                 pending: pendingCount,
                 color: circle.color || 'from-blue-500 to-blue-700',
                 icon: circle.icon || '💻',
+                creator: circle.createdBy?.name || 'Admin'
             };
         }));
 
@@ -121,7 +132,6 @@ router.get('/admin/dashboard', auth, async (req, res) => {
 
         // PLATFORM ADMIN: Fetch circles pending platform approval
         let circleCreationRequests = [];
-        const user = await User.findById(req.user.id);
         if (user && user.role === 'admin') {
             const pendingCircles = await Circle.find({ status: 'Pending' }).populate('createdBy', 'name headline').lean();
             circleCreationRequests = pendingCircles.map(c => ({
@@ -163,11 +173,11 @@ router.get('/:id', auth, async (req, res) => {
         // Check membership
         const membership = await CircleMember.findOne({
             circle: req.params.id,
-            user: req.user.id,
-            status: 'Approved'
+            user: req.user.id
         });
 
-        const isJoined = !!membership;
+        const isJoined = membership?.status === 'Approved';
+        const isPending = membership?.status === 'Pending';
 
         if (!isJoined) {
             // Return only public metadata for non-members
@@ -183,7 +193,8 @@ router.get('/:id', auth, async (req, res) => {
                     isPrivate: circle.isPrivate,
                     memberCount: circle.memberCount
                 }, 
-                isJoined: false 
+                isJoined: false,
+                isPending
             });
         }
 
@@ -193,7 +204,17 @@ router.get('/:id', auth, async (req, res) => {
             status: 'Approved'
         }).populate('user', 'name headline profilePicture');
 
-        res.json({ circle, members, isJoined: true });
+        const isAdmin = membership?.role === 'Admin' || req.user.role === 'admin';
+
+        let pendingRequests = [];
+        if (isAdmin) {
+            pendingRequests = await CircleMember.find({
+                circle: req.params.id,
+                status: 'Pending'
+            }).populate('user', 'name headline profilePicture');
+        }
+
+        res.json({ circle, members, isJoined: true, isAdmin, pendingRequests });
     } catch (err) {
         res.status(500).json({ error: err.message });
     }
@@ -219,8 +240,13 @@ router.post('/', auth, async (req, res) => {
             status: 'Approved'
         });
 
-        // Update user's circles array
-        await User.findByIdAndUpdate(req.user.id, { $push: { circles: circle._id } });
+        // Update user's circles array and primary domain if empty
+        const userUpdate = { $push: { circles: circle._id } };
+        const user = await User.findById(req.user.id);
+        if (!user.primaryDomain && domain !== 'General') {
+            userUpdate.primaryDomain = domain;
+        }
+        await User.findByIdAndUpdate(req.user.id, userUpdate);
 
         res.status(201).json(circle);
     } catch (err) {
@@ -268,6 +294,12 @@ router.post('/join', auth, async (req, res) => {
             status
         });
 
+        // Set primary domain if not already set
+        if (!user.primaryDomain && circle.domain !== 'General') {
+            await User.findByIdAndUpdate(userId, { primaryDomain: circle.domain });
+        }
+
+        const io = req.app.get('io');
         if (status === 'Approved') {
             await Promise.all([
                 User.findByIdAndUpdate(userId, { $push: { circles: circleId } }),
@@ -280,10 +312,47 @@ router.post('/join', auth, async (req, res) => {
                     description: `Joined ${circle.name}`,
                     meta: new Map([['circleName', circle.name]]),
                 }),
+                createNotification(io, {
+                    userId,
+                    category: 'connection',
+                    type: 'connection_accepted',
+                    message: `You have successfully joined "${circle.name}"!`,
+                    priority: 'medium'
+                })
             ]);
+        } else if (status === 'Pending') {
+            // Notify circle admin
+            await createNotification(io, {
+                userId: circle.createdBy,
+                category: 'reminder',
+                type: 'join_request',
+                message: `${user.name} has requested to join your circle "${circle.name}".`,
+                priority: 'medium'
+            });
         }
 
         res.status(201).json({ success: true, status, member });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// PUT Update circle settings (Admin only)
+router.put('/:id', auth, async (req, res) => {
+    try {
+        const adminCheck = await CircleMember.findOne({
+            circle: req.params.id,
+            user: req.user.id,
+            role: 'Admin'
+        });
+        
+        if (!adminCheck && req.user.role !== 'admin') {
+            return res.status(403).json({ message: 'Only admins can update circle settings' });
+        }
+
+        const updates = req.body;
+        const circle = await Circle.findByIdAndUpdate(req.params.id, updates, { new: true });
+        res.json(circle);
     } catch (err) {
         res.status(500).json({ error: err.message });
     }
@@ -384,6 +453,42 @@ router.put('/admin/review/:id', auth, async (req, res) => {
         if (!circle) return res.status(404).json({ error: 'Circle not found' });
 
         res.json({ message: `Circle ${status.toLowerCase()} successfully`, circle });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// DELETE a circle
+router.delete('/:id', auth, async (req, res) => {
+    try {
+        const circleId = req.params.id;
+        const userId = req.user.id;
+
+        const circle = await Circle.findById(circleId);
+        if (!circle) return res.status(404).json({ error: 'Circle not found' });
+
+        // Check if user is the creator or a system admin
+        const user = await User.findById(userId);
+        const isCreator = circle.createdBy && circle.createdBy.toString() === userId;
+        const isAdmin = user && user.role === 'admin';
+
+        if (!isCreator && !isAdmin) {
+            return res.status(403).json({ error: 'Not authorized to delete this circle' });
+        }
+
+        // Delete the circle
+        await Circle.findByIdAndDelete(circleId);
+
+        // Cleanup: Delete all memberships
+        await CircleMember.deleteMany({ circle: circleId });
+
+        // Cleanup: Pull circle from all users' circles array
+        await User.updateMany({ circles: circleId }, { $pull: { circles: circleId } });
+
+        // Cleanup: Delete related activities
+        await Activity.deleteMany({ targetId: circleId, targetModel: 'Circle' });
+
+        res.json({ success: true, message: 'Circle deleted successfully' });
     } catch (err) {
         res.status(500).json({ error: err.message });
     }

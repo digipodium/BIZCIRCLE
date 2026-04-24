@@ -3,51 +3,59 @@
 import { useEffect, useState, use } from 'react';
 import Sidebar from '@/components/dashboard/Sidebar';
 import api from '@/lib/axios';
-import { Share2, Users, Calendar, MessageSquare, Info, Shield, Globe } from 'lucide-react';
+import { Share2, Users, Calendar, MessageSquare, Info, Shield, Globe, Clock, Settings, UserPlus, Award } from 'lucide-react';
 
 import ChatTab from '@/components/groups/ChatTab';
 import MembersTab from '@/components/groups/MembersTab';
 import EventsTab from '@/components/groups/EventsTab';
+import CircleSettingsTab from '@/components/groups/CircleSettingsTab';
+import JoinRequestsTab from '@/components/groups/JoinRequestsTab';
+import CircleReferralTab from '@/components/groups/CircleReferralTab';
 
 export default function CircleDetailPage({ params }) {
   const unwrappedParams = use(params);
   const { circleId } = unwrappedParams;
   const [circle, setCircle] = useState(null);
   const [circleMembers, setCircleMembers] = useState([]);
+  const [pendingRequests, setPendingRequests] = useState([]);
   const [isJoined, setIsJoined] = useState(false);
+  const [isPending, setIsPending] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
   const [activeTab, setActiveTab] = useState('meetings');
   const [loading, setLoading] = useState(true);
   const [isJoining, setIsJoining] = useState(false);
 
-  useEffect(() => {
-    const fetchCircle = async () => {
-      try {
-        const { data } = await api.get(`/api/circles/${circleId}`);
-        setCircle(data.circle);
-        setCircleMembers(data.members || []);
-        setIsJoined(data.isJoined || false);
-        
-        // If user is joined and hasn't opened a circle before, update the flag
-        if (data.isJoined) {
-          api.put('/user/opened-circle').catch(err => console.error("Failed to update opened circle flag:", err));
-        }
-      } catch (err) {
-        console.error("Failed to fetch circle:", err);
-      } finally {
-        setLoading(false);
+  const fetchCircle = async () => {
+    try {
+      const { data } = await api.get(`/api/circles/${circleId}`);
+      setCircle(data.circle);
+      setCircleMembers(data.members || []);
+      setPendingRequests(data.pendingRequests || []);
+      setIsJoined(data.isJoined || false);
+      setIsPending(data.isPending || false);
+      setIsAdmin(data.isAdmin || false);
+      
+      // If user is joined and hasn't opened a circle before, update the flag
+      if (data.isJoined) {
+        api.put('/user/opened-circle').catch(err => console.error("Failed to update opened circle flag:", err));
       }
-    };
+    } catch (err) {
+      console.error("Failed to fetch circle:", err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
     fetchCircle();
   }, [circleId]);
 
   const handleJoin = async () => {
-    if (isJoined || isJoining) return;
+    if (isJoined || isPending || isJoining) return;
     setIsJoining(true);
     try {
       await api.post('/api/circles/join', { circleId });
-      alert("Join request sent! Please wait for admin approval if the circle is private.");
-      // Refresh to check if it's auto-approved or pending
-      window.location.reload();
+      fetchCircle();
     } catch (err) {
       alert(err.response?.data?.error || "Failed to join");
     } finally {
@@ -84,6 +92,17 @@ export default function CircleDetailPage({ params }) {
     { id: 'chat', label: 'Chat', icon: MessageSquare },
     { id: 'members', label: 'Members', icon: Users },
   ];
+
+  if (isJoined) {
+    tabs.push({ id: 'refer', label: 'Refer & Earn', icon: Award });
+  }
+
+  if (isAdmin) {
+    if (pendingRequests.length > 0) {
+      tabs.push({ id: 'requests', label: `Requests (${pendingRequests.length})`, icon: UserPlus });
+    }
+    tabs.push({ id: 'settings', label: 'Settings', icon: Settings });
+  }
 
   return (
     <div className="flex min-h-screen bg-slate-50">
@@ -130,25 +149,29 @@ export default function CircleDetailPage({ params }) {
             /* Membership Required View */
             <div className="bg-white rounded-[2.5rem] p-12 border border-slate-100 shadow-sm text-center animate-in fade-in zoom-in duration-500">
                <div className="w-20 h-20 bg-blue-50 rounded-full flex items-center justify-center mx-auto mb-6">
-                 <Shield size={40} className="text-blue-600" />
+                 {isPending ? <Clock size={40} className="text-amber-500" /> : <Shield size={40} className="text-blue-600" />}
                </div>
-               <h2 className="text-3xl font-black text-slate-900 mb-4">Membership Required</h2>
+               <h2 className="text-3xl font-black text-slate-900 mb-4">{isPending ? "Request Pending" : "Membership Required"}</h2>
                <p className="text-slate-500 text-lg max-w-xl mx-auto mb-10 leading-relaxed">
-                 This is a professional community. To access the chat, meetings, and member list, you must first join the circle.
+                 {isPending 
+                   ? "Your request to join this circle is currently under review by the community admin. You will gain access once approved."
+                   : "This is a professional community. To access the chat, meetings, and member list, you must first join the circle."}
                </p>
                <button 
                  onClick={handleJoin}
-                 disabled={isJoining}
-                 className="px-10 py-4 bg-blue-600 text-white rounded-2xl font-black text-lg hover:bg-blue-700 transition-all shadow-xl shadow-blue-100 flex items-center gap-3 mx-auto disabled:opacity-50"
+                 disabled={isPending || isJoining}
+                 className={`px-10 py-4 rounded-2xl font-black text-lg transition-all shadow-xl flex items-center gap-3 mx-auto disabled:opacity-50 ${
+                    isPending ? 'bg-amber-100 text-amber-700' : 'bg-blue-600 text-white hover:bg-blue-700 shadow-blue-100'
+                 }`}
                >
-                 {isJoining ? "Processing..." : "Join This Circle"}
+                 {isJoining ? "Processing..." : isPending ? "Wait for Approval" : "Join This Circle"}
                </button>
             </div>
           ) : (
             /* Full Member View */
             <>
               {/* Navigation */}
-              <div className="flex gap-2 p-1.5 bg-white rounded-2xl border border-slate-100 shadow-sm w-fit">
+              <div className="flex gap-2 p-1.5 bg-white rounded-2xl border border-slate-100 shadow-sm w-fit overflow-x-auto">
                 {tabs.map((tab) => {
                   const Icon = tab.icon;
                   const isActive = activeTab === tab.id;
@@ -156,7 +179,7 @@ export default function CircleDetailPage({ params }) {
                     <button
                       key={tab.id}
                       onClick={() => setActiveTab(tab.id)}
-                      className={`flex items-center gap-2 px-6 py-3 rounded-xl text-sm font-bold transition-all ${
+                      className={`flex items-center gap-2 px-6 py-3 rounded-xl text-sm font-bold transition-all whitespace-nowrap ${
                         isActive ? 'bg-blue-600 text-white shadow-lg shadow-blue-100' : 'text-slate-500 hover:bg-slate-50'
                       }`}
                     >
@@ -168,9 +191,16 @@ export default function CircleDetailPage({ params }) {
 
               {/* Content */}
               <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
-                {activeTab === 'meetings' && <EventsTab targetId={circleId} targetModel="Circle" members={circleMembers} />}
+                {activeTab === 'meetings' && <EventsTab targetId={circleId} targetModel="Circle" members={circleMembers} isAdmin={isAdmin} />}
                 {activeTab === 'chat' && <ChatTab groupId={circleId} />}
                 {activeTab === 'members' && <MembersTab members={circleMembers} />}
+                {activeTab === 'refer' && <CircleReferralTab circle={circle} />}
+                {activeTab === 'requests' && isAdmin && (
+                  <JoinRequestsTab circleId={circleId} requests={pendingRequests} onAction={fetchCircle} />
+                )}
+                {activeTab === 'settings' && isAdmin && (
+                  <CircleSettingsTab circle={circle} onUpdate={(updated) => setCircle(updated)} />
+                )}
               </div>
             </>
           )}

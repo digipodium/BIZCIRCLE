@@ -1,13 +1,14 @@
 "use client";
 
+import { useState, useEffect } from 'react';
 import { 
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
   PieChart, Pie, Cell, Legend, BarChart, Bar
 } from 'recharts';
 import { Download, Calendar, ArrowUpRight, ArrowDownRight, Users, MessageSquare, Heart, Clock } from 'lucide-react';
-import { USER_GROWTH_DATA, ENGAGEMENT_STATS } from '@/lib/adminMockData';
+import api from '@/lib/axios';
 
-const PIE_DATA = [
+const INITIAL_PIE_DATA = [
   { name: 'Technology', value: 400, color: '#2563eb' },
   { name: 'Finance', value: 300, color: '#059669' },
   { name: 'Marketing', value: 300, color: '#7c3aed' },
@@ -15,6 +16,33 @@ const PIE_DATA = [
 ];
 
 export default function AnalyticsSection() {
+  const [userGrowth, setUserGrowth] = useState([]);
+  const [engagementStats, setEngagementStats] = useState([]);
+  const [stats, setStats] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    api.get('/api/admin/dashboard')
+      .then(res => {
+        setUserGrowth(res.data.userGrowth);
+        setEngagementStats(res.data.engagementStats);
+        setStats(res.data.stats);
+      })
+      .catch(err => console.error('Failed to fetch analytics:', err))
+      .finally(() => setLoading(false));
+  }, []);
+
+  const getStatValue = (id) => stats.find(s => s.id === id)?.value || '0';
+
+  if (loading) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[60vh] text-slate-400 animate-pulse">
+        <BarChart size={48} className="mb-4 animate-spin" />
+        <p className="font-bold text-lg">Analyzing Platform Data...</p>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
@@ -35,10 +63,10 @@ export default function AnalyticsSection() {
       {/* Quick Metrics */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
         {[
-          { label: 'Avg. Daily Active', value: '482', trend: '+12.5%', icon: Users, color: 'blue' },
-          { label: 'Post Volume', value: '1,280', trend: '+18.2%', icon: MessageSquare, color: 'emerald' },
-          { label: 'Engagement Rate', value: '4.8%', trend: '-2.1%', icon: Heart, color: 'pink' },
-          { label: 'Session Duration', value: '12m 40s', trend: '+5.4%', icon: Clock, color: 'amber' },
+          { label: 'Avg. Daily Active', value: getStatValue('active-users'), trend: '+0%', icon: Users, color: 'blue' },
+          { label: 'Post Volume', value: getStatValue('posts-today'), trend: '+0%', icon: MessageSquare, color: 'emerald' },
+          { label: 'Total Members', value: getStatValue('total-users'), trend: '+0%', icon: Heart, color: 'pink' },
+          { label: 'Pending Reports', value: getStatValue('pending-reports'), trend: '0', icon: Clock, color: 'amber' },
         ].map((item, idx) => (
           <div key={idx} className="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm group">
             <div className="flex items-center justify-between mb-4">
@@ -61,7 +89,7 @@ export default function AnalyticsSection() {
           <h3 className="text-lg font-bold text-slate-800 mb-8">User Acquisition</h3>
           <div className="h-72 w-full">
             <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={USER_GROWTH_DATA}>
+              <AreaChart data={userGrowth}>
                 <defs>
                   <linearGradient id="colorAcq" x1="0" y1="0" x2="0" y2="1">
                     <stop offset="5%" stopColor="#2563eb" stopOpacity={0.2}/>
@@ -99,7 +127,7 @@ export default function AnalyticsSection() {
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>
                 <Pie
-                  data={PIE_DATA}
+                  data={INITIAL_PIE_DATA}
                   cx="50%"
                   cy="50%"
                   innerRadius={60}
@@ -107,7 +135,7 @@ export default function AnalyticsSection() {
                   paddingAngle={5}
                   dataKey="value"
                 >
-                  {PIE_DATA.map((entry, index) => (
+                  {INITIAL_PIE_DATA.map((entry, index) => (
                     <Cell key={`cell-${index}`} fill={entry.color} />
                   ))}
                 </Pie>
@@ -136,7 +164,7 @@ export default function AnalyticsSection() {
         </div>
         <div className="h-80 w-full">
           <ResponsiveContainer width="100%" height="100%">
-            <BarChart data={ENGAGEMENT_STATS}>
+            <BarChart data={engagementStats}>
               <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
               <XAxis dataKey="name" axisLine={false} tickLine={false} />
               <YAxis axisLine={false} tickLine={false} />

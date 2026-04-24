@@ -1,28 +1,57 @@
 "use client";
 
-import { useState } from "react";
-import { Search, Filter, Trash2, Flag, CheckCircle, Clock, AlertTriangle, User, Calendar } from 'lucide-react';
-
-const MOCK_POSTS = [
-  { id: 1, author: 'Alice Johnson', content: 'Loving the new features in BizCircle! #networking', date: '2026-04-19', status: 'Active', flagged: false },
-  { id: 2, author: 'Bob Smith', content: 'Check out this totally legitimate crypto investment opportunity! [Link]', date: '2026-04-18', status: 'Flagged', flagged: true },
-  { id: 3, author: 'Charlie Brown', content: 'Anyone available for a quick sync on the marketing strategy?', date: '2026-04-18', status: 'Active', flagged: false },
-  { id: 4, author: 'David Wilson', content: 'This platform is amazing, I just found my next co-founder!', date: '2026-04-17', status: 'Active', flagged: false },
-  { id: 5, author: 'Eve Adams', content: 'ANOTHER SPAM MESSAGE TO TEST MODERATION', date: '2026-04-17', status: 'Flagged', flagged: true },
-];
+import { useState, useEffect } from "react";
+import { Search, Filter, Trash2, Flag, CheckCircle, Clock, AlertTriangle, User, Calendar, MessageSquare } from 'lucide-react';
+import api from '@/lib/axios';
 
 export default function ContentModerationSection() {
   const [activeFilter, setActiveFilter] = useState('All');
   const [searchTerm, setSearchTerm] = useState("");
+  const [posts, setPosts] = useState([]);
+  const [loading, setLoading] = useState(true);
 
-  const filteredPosts = MOCK_POSTS.filter(post => {
-    const matchesSearch = post.content.toLowerCase().includes(searchTerm.toLowerCase()) || 
-                          post.author.toLowerCase().includes(searchTerm.toLowerCase());
+  const fetchPosts = async () => {
+    try {
+      const res = await api.get('/api/admin/messages');
+      setPosts(res.data);
+    } catch (err) {
+      console.error('Failed to load posts for moderation:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchPosts();
+  }, []);
+
+  const handleDelete = async (postId) => {
+    if (!confirm('Are you sure you want to delete this post?')) return;
+    try {
+      await api.delete(`/api/admin/messages/${postId}`);
+      fetchPosts();
+    } catch (err) {
+      console.error('Failed to delete post:', err);
+    }
+  };
+
+  const filteredPosts = posts.filter(post => {
+    const matchesSearch = (post.content?.toLowerCase() || "").includes(searchTerm.toLowerCase()) || 
+                          (post.author?.toLowerCase() || "").includes(searchTerm.toLowerCase());
     const matchesFilter = activeFilter === 'All' || 
                           (activeFilter === 'Flagged' && post.flagged) ||
                           (activeFilter === 'Clean' && !post.flagged);
     return matchesSearch && matchesFilter;
   });
+
+  if (loading) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[60vh] text-slate-400 animate-pulse">
+        <MessageSquare size={48} className="mb-4 animate-spin" />
+        <p className="font-bold text-lg">Scanning Platform Content...</p>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
@@ -74,9 +103,12 @@ export default function ContentModerationSection() {
                   </div>
                   <div>
                     <p className="text-sm font-bold text-slate-800">{post.author}</p>
-                    <p className="text-[10px] font-bold text-slate-400 flex items-center gap-1 uppercase tracking-wider">
-                      <Calendar size={10} /> {post.date}
-                    </p>
+                    <div className="flex items-center gap-2">
+                        <p className="text-[10px] font-bold text-slate-400 flex items-center gap-1 uppercase tracking-wider">
+                        <Calendar size={10} /> {post.date}
+                        </p>
+                        <span className="text-[10px] font-bold text-blue-500 px-1.5 py-0.5 bg-blue-50 rounded-md">#{post.groupName}</span>
+                    </div>
                   </div>
                   {post.flagged && (
                     <span className="ml-2 flex items-center gap-1 bg-rose-50 text-rose-600 px-2 py-0.5 rounded-full text-[10px] font-extrabold border border-rose-100 animate-pulse">
@@ -91,7 +123,10 @@ export default function ContentModerationSection() {
                 <button className="flex-1 sm:flex-none flex items-center gap-2 px-4 py-2 bg-emerald-50 text-emerald-600 rounded-xl text-xs font-bold hover:bg-emerald-100 transition-colors border border-emerald-100">
                   <CheckCircle size={14} /> Keep
                 </button>
-                <button className="flex-1 sm:flex-none flex items-center gap-2 px-4 py-2 bg-rose-50 text-rose-600 rounded-xl text-xs font-bold hover:bg-rose-100 transition-colors border border-rose-100">
+                <button 
+                  onClick={() => handleDelete(post.id)}
+                  className="flex-1 sm:flex-none flex items-center gap-2 px-4 py-2 bg-rose-50 text-rose-600 rounded-xl text-xs font-bold hover:bg-rose-100 transition-colors border border-rose-100"
+                >
                   <Trash2 size={14} /> Delete
                 </button>
                 <button className="p-2 text-slate-400 hover:bg-slate-50 rounded-lg">

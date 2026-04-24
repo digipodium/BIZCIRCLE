@@ -14,7 +14,9 @@ import {
   Search,
   ChevronRight,
   Menu,
-  X
+  X,
+  LogOut,
+  ArrowLeft
 } from "lucide-react";
 import { useProfile } from "@/lib/useProfile";
 
@@ -96,13 +98,37 @@ export default function AdminLayout({ children, activeSection, setActiveSection 
           })}
         </nav>
 
-        <div className="absolute bottom-6 left-0 w-full px-6">
-          <button 
-            onClick={() => setSidebarOpen(!sidebarOpen)}
-            className="w-full flex items-center justify-center p-2 rounded-lg bg-slate-100 text-slate-600 hover:bg-slate-200 transition-colors"
+        <div className="absolute bottom-6 left-0 w-full px-3 space-y-1">
+          <button
+            onClick={() => window.location.href = '/dashboard'}
+            className="sidebar-item w-full flex items-center gap-3 px-3 py-3 rounded-xl text-sm font-semibold text-slate-500 hover:text-blue-600 transition-all"
+            title="Back to User View"
           >
-            {sidebarOpen ? <X size={18} /> : <Menu size={18} />}
+            <ArrowLeft size={sidebarOpen ? 20 : 24} />
+            {sidebarOpen && <span>User View</span>}
           </button>
+          
+          <button
+            onClick={() => {
+              localStorage.removeItem('token');
+              localStorage.removeItem('userId');
+              window.location.href = '/login';
+            }}
+            className="sidebar-item w-full flex items-center gap-3 px-3 py-3 rounded-xl text-sm font-semibold text-red-500 hover:bg-red-50 transition-all"
+            title="Logout"
+          >
+            <LogOut size={sidebarOpen ? 20 : 24} />
+            {sidebarOpen && <span>Logout</span>}
+          </button>
+
+          <div className="pt-2">
+            <button 
+              onClick={() => setSidebarOpen(!sidebarOpen)}
+              className="w-full flex items-center justify-center p-2 rounded-lg bg-slate-100 text-slate-600 hover:bg-slate-200 transition-colors"
+            >
+              {sidebarOpen ? <X size={18} /> : <Menu size={18} />}
+            </button>
+          </div>
         </div>
       </aside>
 

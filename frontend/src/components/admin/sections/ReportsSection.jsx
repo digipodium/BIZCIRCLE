@@ -1,13 +1,48 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { AlertCircle, CheckCircle, Clock, Trash2, Eye, User, MessageSquare, Grid } from 'lucide-react';
-import { MOCK_REPORTS } from '@/lib/adminMockData';
+import api from '@/lib/axios';
 
 export default function ReportsSection() {
   const [filter, setFilter] = useState("All");
+  const [reports, setReports] = useState([]);
+  const [loading, setLoading] = useState(true);
 
-  const filteredReports = MOCK_REPORTS.filter(r => filter === "All" || r.status === filter);
+  const fetchReports = async () => {
+    try {
+      const res = await api.get('/api/admin/reports');
+      setReports(res.data);
+    } catch (err) {
+      console.error('Failed to load reports:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchReports();
+  }, []);
+
+  const handleResolve = async (reportId) => {
+    try {
+      await api.put(`/api/admin/reports/${reportId}/status`, { status: 'Resolved' });
+      fetchReports();
+    } catch (err) {
+      console.error('Failed to resolve report:', err);
+    }
+  };
+
+  const filteredReports = reports.filter(r => filter === "All" || r.status === filter);
+
+  if (loading) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[60vh] text-slate-400 animate-pulse">
+        <AlertCircle size={48} className="mb-4 animate-spin" />
+        <p className="font-bold text-lg">Loading Reports...</p>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
@@ -73,7 +108,10 @@ export default function ReportsSection() {
               <div className="flex flex-row md:flex-col gap-2 w-full md:w-auto">
                 {report.status === 'Pending' && (
                   <>
-                    <button className="flex-1 md:flex-none flex items-center justify-center gap-2 px-6 py-2.5 bg-slate-900 rounded-xl text-xs font-bold text-white hover:bg-slate-800 transition-colors shadow-sm">
+                    <button 
+                      onClick={() => handleResolve(report.id)}
+                      className="flex-1 md:flex-none flex items-center justify-center gap-2 px-6 py-2.5 bg-slate-900 rounded-xl text-xs font-bold text-white hover:bg-slate-800 transition-colors shadow-sm"
+                    >
                       <CheckCircle size={14} /> Resolve
                     </button>
                     <button className="flex-1 md:flex-none flex items-center justify-center gap-2 px-6 py-2.5 bg-rose-50 text-rose-600 rounded-xl text-xs font-bold hover:bg-rose-100 transition-colors border border-rose-100">

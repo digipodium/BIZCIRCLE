@@ -12,10 +12,10 @@ import { ENGAGEMENT_STATS, MOCK_STATS as INITIAL_MOCK_STATS, USER_GROWTH_DATA as
 import api from '@/lib/axios';
 
 export default function OverviewSection() {
-  const [stats, setStats] = useState(INITIAL_MOCK_STATS);
-  const [userGrowth, setUserGrowth] = useState(INITIAL_USER_GROWTH_DATA);
-  const [recentActivity, setRecentActivity] = useState(INITIAL_RECENT_ACTIVITY);
-  const [engagementStats, setEngagementStats] = useState(ENGAGEMENT_STATS);
+  const [stats, setStats] = useState([]);
+  const [userGrowth, setUserGrowth] = useState([]);
+  const [recentActivity, setRecentActivity] = useState([]);
+  const [engagementStats, setEngagementStats] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -37,6 +37,15 @@ export default function OverviewSection() {
     FileText: FileText,
     AlertCircle: AlertCircle
   };
+
+  if (loading) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[60vh] text-slate-400 animate-pulse">
+        <Activity size={48} className="mb-4 animate-spin" />
+        <p className="font-bold text-lg">Gathering Platform Insights...</p>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-8 animate-in fade-in duration-500">

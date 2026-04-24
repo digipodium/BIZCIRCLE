@@ -5,7 +5,7 @@ import { Calendar, Video, MapPin, Search, Plus, Edit3, Trash2 } from 'lucide-rea
 import CreateEventModal from './CreateEventModal';
 import { useProfile } from '@/lib/useProfile';
 
-export default function EventsTab({ targetId, targetModel = 'Group', members = [] }) {
+export default function EventsTab({ targetId, targetModel = 'Group', members = [], isAdmin }) {
   const [events, setEvents] = useState([]);
   const [showModal, setShowModal] = useState(false);
   const [editingEvent, setEditingEvent] = useState(null);
@@ -15,7 +15,7 @@ export default function EventsTab({ targetId, targetModel = 'Group', members = [
   const currentUserId = user?._id || user?.id || localStorage.getItem('userId');
   const isSystemAdmin = user?.role?.toLowerCase() === 'admin';
   const isCircleAdmin = members.some(m => (m.user?._id === currentUserId || m.user === currentUserId) && m.role === 'Admin' && m.status === 'Approved');
-  const canSchedule = isSystemAdmin || isCircleAdmin;
+  const canSchedule = isAdmin || isSystemAdmin || isCircleAdmin;
   
   const fetchEvents = useCallback(async () => {
     try {

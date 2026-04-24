@@ -6,13 +6,9 @@ import {
   Link2, 
   Rocket, 
   Briefcase, 
-  UserPlus, 
-  Star,
-  Send
+  Star
 } from "lucide-react";
 import { usePoints } from "@/context/PointsContext";
-import { useProfile } from "@/lib/useProfile";
-import api from "@/lib/axios";
 
 const EarnCard = ({ icon: Icon, title, points, action, completed }) => {
   const { earnPoints } = usePoints();
@@ -60,30 +56,7 @@ const EarnCard = ({ icon: Icon, title, points, action, completed }) => {
 };
 
 const WaysToEarn = () => {
-  const [referring, setReferring] = useState(false);
-  const { earnPoints } = usePoints();
-  const { user } = useProfile();
 
-  const handleReferral = async (e) => {
-    e.preventDefault();
-    const email = e.target.elements[0].value;
-    setReferring(true);
-    try {
-      await api.post("/api/referrals", { 
-        candidateEmail: email,
-        candidateName: email.split('@')[0], // Fallback name
-        message: "Referred via Dashboard quick link"
-      });
-      earnPoints(30, "Refer a friend");
-      e.target.reset();
-      alert("Referral sent successfully!");
-    } catch (err) {
-      console.error("Referral error:", err);
-      alert(err.response?.data?.message || "Failed to send referral");
-    } finally {
-      setReferring(false);
-    }
-  };
 
   const tasks = [
     { icon: UserCircle, title: "Complete your profile", points: 50, action: "Finalize Profile", completed: true },
@@ -106,41 +79,7 @@ const WaysToEarn = () => {
         ))}
       </div>
 
-      {/* Referral Section */}
-      {(user?.hasOpenedCircle || user?.role?.toLowerCase() === 'admin') && (
-        <div className="bg-gradient-to-br from-blue-600 to-blue-800 rounded-3xl p-8 text-white relative overflow-hidden shadow-2xl shadow-blue-200">
-          <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full -translate-y-1/2 translate-x-1/2 blur-3xl pointer-events-none" />
-          
-          <div className="relative z-10 flex flex-col lg:flex-row items-center justify-between gap-8">
-            <div className="max-w-md text-center lg:text-left">
-              <h3 className="text-2xl font-bold mb-2">Refer a friend & earn 30 pts</h3>
-              <p className="text-blue-100 text-sm leading-relaxed">
-                Grow the BizCircle community and get rewarded. Share your unique referral link or enter their email below.
-              </p>
-            </div>
-            
-            <form onSubmit={handleReferral} className="flex-1 w-full max-w-md">
-              <div className="flex bg-white/10 backdrop-blur-md p-1.5 rounded-2xl border border-white/20">
-                <input 
-                  required
-                  type="email" 
-                  placeholder="friend@email.com" 
-                  className="flex-1 bg-transparent px-4 py-3 placeholder:text-blue-200 outline-none text-white text-sm"
-                />
-                <button 
-                  type="submit"
-                  disabled={referring}
-                  className="bg-white text-blue-700 px-6 py-3 rounded-xl font-bold text-sm hover:bg-blue-50 transition-colors flex items-center gap-2"
-                >
-                  {referring ? 'Sending...' : (
-                    <>Send <Send size={16} /></>
-                  )}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
+
     </section>
   );
 };

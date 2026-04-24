@@ -19,13 +19,7 @@ export default function ProfileSidebar() {
   const stats = [
     { label: "Circles Joined", value: user?.circles?.length ?? "—", icon: GitBranch, color: "text-blue-600" },
     { label: "Connections", value: user?.connections?.length ?? 0, icon: Users, color: "text-emerald-600" },
-    { label: "Referrals", value: user?.referralsGiven ?? 0, icon: Award, color: "text-amber-600" },
-  ].filter(stat => {
-    if (stat.label === "Referrals") {
-      return user?.hasOpenedCircle || user?.role?.toLowerCase() === 'admin';
-    }
-    return true;
-  });
+  ];
 
   const quickLinks = [
     user?.github && { label: user.github, icon: "⌥" },

@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { Users, Link2, UserPlus } from "lucide-react";
+import { Users, Link2 } from "lucide-react";
 import { useProfile } from "@/lib/useProfile";
 
 const StatCard = ({ icon: Icon, value, label, color }) => (
@@ -35,12 +35,6 @@ const Stats = () => {
       value: user?.connections?.length || "0", 
       icon: Link2, 
       color: "bg-indigo-600" 
-    },
-    { 
-      label: "Referrals", 
-      value: user?.referralsGiven || "0", 
-      icon: UserPlus, 
-      color: "bg-sky-600" 
     },
   ];
 
