@@ -3,12 +3,19 @@ import { useState, useEffect, useCallback } from 'react';
 import api from '@/lib/axios';
 import { Calendar, Video, MapPin, Search, Plus, Edit3, Trash2 } from 'lucide-react';
 import CreateEventModal from './CreateEventModal';
+import { useProfile } from '@/lib/useProfile';
 
 export default function EventsTab({ targetId, targetModel = 'Group', members = [] }) {
   const [events, setEvents] = useState([]);
   const [showModal, setShowModal] = useState(false);
   const [editingEvent, setEditingEvent] = useState(null);
   const [loading, setLoading] = useState(true);
+  const { user } = useProfile();
+  
+  const currentUserId = user?._id || user?.id || localStorage.getItem('userId');
+  const isSystemAdmin = user?.role?.toLowerCase() === 'admin';
+  const isCircleAdmin = members.some(m => (m.user?._id === currentUserId || m.user === currentUserId) && m.role === 'Admin' && m.status === 'Approved');
+  const canSchedule = isSystemAdmin || isCircleAdmin;
   
   const fetchEvents = useCallback(async () => {
     try {
@@ -65,12 +72,14 @@ export default function EventsTab({ targetId, targetModel = 'Group', members = [
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <h3 className="text-xl font-bold text-gray-900">Upcoming Events</h3>
-        <button 
-          onClick={() => setShowModal(true)}
-          className="bg-blue-600 text-white px-5 py-2.5 rounded-xl text-sm font-bold hover:bg-blue-700 transition-all flex items-center shadow-lg shadow-blue-100"
-        >
-          <Plus className="w-4 h-4 mr-2" /> Schedule Event
-        </button>
+        {canSchedule && (
+          <button 
+            onClick={() => setShowModal(true)}
+            className="bg-blue-600 text-white px-5 py-2.5 rounded-xl text-sm font-bold hover:bg-blue-700 transition-all flex items-center shadow-lg shadow-blue-100"
+          >
+            <Plus className="w-4 h-4 mr-2" /> Schedule Event
+          </button>
+        )}
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -85,14 +94,17 @@ export default function EventsTab({ targetId, targetModel = 'Group', members = [
               <Calendar className="w-8 h-8" />
             </div>
             <h3 className="text-lg font-bold text-gray-900">No Events Planned</h3>
-            <p className="text-gray-500 max-w-xs mx-auto mt-1">Be the first to schedule a meetup or workshop for this circle!</p>
+            <p className="text-gray-500 max-w-xs mx-auto mt-1">
+              {canSchedule 
+                ? "Be the first to schedule a meetup or workshop for this circle!" 
+                : "Check back later for upcoming meetups and workshops."}
+            </p>
           </div>
         ) : (
           events.map(ev => {
             const date = new Date(ev.dateTime);
-            const currentUserId = localStorage.getItem('userId');
             const hasRSVPed = ev.rsvp?.some(r => r.user === currentUserId || r.user?._id === currentUserId);
-            const isAdmin = members.some(m => (m.user?._id === currentUserId || m.user === currentUserId) && m.role === 'Admin' && m.status === 'Approved');
+            const isEventAdmin = canSchedule; // Use the component-level admin check
 
             return (
               <div key={ev._id} className="bg-white p-6 rounded-3xl border border-gray-100 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all group overflow-hidden relative">
@@ -104,7 +116,7 @@ export default function EventsTab({ targetId, targetModel = 'Group', members = [
                       <div className="text-[10px] uppercase font-black tracking-widest opacity-80">{date.toLocaleString('default', { month: 'short' })}</div>
                       <div className="text-2xl font-black">{date.getDate()}</div>
                     </div>
-                    {isAdmin && (
+                    {isEventAdmin && (
                       <div className="flex flex-col space-y-1 ml-2">
                         <button 
                           onClick={() => handleEdit(ev)}

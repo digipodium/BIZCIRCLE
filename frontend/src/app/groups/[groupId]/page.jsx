@@ -160,7 +160,7 @@ export default function GroupDetail({ params }) {
       <div className="mt-6">
         {activeTab === 'chat' && <ChatTab groupId={groupId} />}
         {activeTab === 'members' && <MembersTab members={group?.members || []} />}
-        {activeTab === 'events' && <EventsTab groupId={groupId} members={group?.members || []} />}
+        {activeTab === 'events' && <EventsTab targetId={groupId} targetModel="Group" members={group?.members || []} />}
         {activeTab === 'polls' && <PollsTab groupId={groupId} />}
       </div>
     </div>

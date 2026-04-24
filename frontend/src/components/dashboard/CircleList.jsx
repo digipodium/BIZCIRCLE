@@ -13,12 +13,12 @@ const CircleCard = ({ _id, name, domain, location, members, isJoined: propIsJoin
 
   const handleJoin = async () => {
     if (joined || isJoining) return;
-    
+
     setIsJoining(true);
     try {
       const endpoint = "/api/circles/join";
       const payload = { circleId: _id };
-      
+
       await api.post(endpoint, payload);
       setJoined(true);
       earnPoints(10, `Joining ${name}`);
@@ -32,12 +32,12 @@ const CircleCard = ({ _id, name, domain, location, members, isJoined: propIsJoin
   };
 
   return (
-    <Link 
+    <Link
       href={`/dashboard/circles/${_id}`}
       className="bg-white rounded-[2rem] border border-slate-100 p-6 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 group relative overflow-hidden flex flex-col h-full"
     >
       <div className="absolute top-0 right-0 w-32 h-32 bg-blue-50 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity" />
-      
+
       <div className="flex justify-between items-start mb-6">
         <div className={`w-14 h-14 rounded-2xl ${color || 'bg-blue-600'} text-white flex items-center justify-center text-2xl font-black shadow-lg shadow-blue-100`}>
           {icon || name.charAt(0)}
@@ -62,17 +62,6 @@ const CircleCard = ({ _id, name, domain, location, members, isJoined: propIsJoin
             </div>
           ))}
         </div>
-        
-        {!joined && (
-          <div className="flex items-center gap-1.5 px-4 py-2 rounded-lg text-xs font-bold transition-all bg-blue-600 text-white shadow-md shadow-blue-100">
-            Join Circle <Plus size={14} />
-          </div>
-        )}
-        {joined && (
-          <div className="flex items-center gap-1 text-xs font-bold text-blue-600 group-hover:translate-x-1 transition-transform">
-            View Details <ChevronRight size={14} />
-          </div>
-        )}
       </div>
     </Link>
   );

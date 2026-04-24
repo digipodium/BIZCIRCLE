@@ -26,6 +26,11 @@ export default function CircleDetailPage({ params }) {
         setCircle(data.circle);
         setCircleMembers(data.members || []);
         setIsJoined(data.isJoined || false);
+        
+        // If user is joined and hasn't opened a circle before, update the flag
+        if (data.isJoined) {
+          api.put('/user/opened-circle').catch(err => console.error("Failed to update opened circle flag:", err));
+        }
       } catch (err) {
         console.error("Failed to fetch circle:", err);
       } finally {
@@ -163,7 +168,7 @@ export default function CircleDetailPage({ params }) {
 
               {/* Content */}
               <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
-                {activeTab === 'meetings' && <EventsTab targetId={circleId} targetModel="Circle" members={[]} />}
+                {activeTab === 'meetings' && <EventsTab targetId={circleId} targetModel="Circle" members={circleMembers} />}
                 {activeTab === 'chat' && <ChatTab groupId={circleId} />}
                 {activeTab === 'members' && <MembersTab members={circleMembers} />}
               </div>

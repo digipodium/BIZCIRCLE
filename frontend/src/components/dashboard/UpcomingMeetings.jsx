@@ -4,11 +4,13 @@ import React, { useState, useEffect } from "react";
 import api from "@/lib/axios";
 import { Calendar, Video, ArrowRight, Loader2, Clock } from "lucide-react";
 import Link from "next/link";
+import { useProfile } from "@/lib/useProfile";
 import { formatDistanceToNow } from "date-fns";
 
 export default function UpcomingMeetings() {
   const [meetings, setMeetings] = useState([]);
   const [loading, setLoading] = useState(true);
+  const { user } = useProfile();
 
   useEffect(() => {
     const fetchMeetings = async () => {
@@ -31,9 +33,11 @@ export default function UpcomingMeetings() {
           <h3 className="text-xl font-black text-slate-800">Your Meetings</h3>
           <p className="text-xs text-slate-400 font-bold uppercase tracking-wider mt-1">Upcoming Sessions</p>
         </div>
-        <Link href="/dashboard/referrals" className="p-2 bg-slate-50 text-slate-400 rounded-xl hover:bg-blue-50 hover:text-blue-600 transition-all">
-          <ArrowRight size={20} />
-        </Link>
+        {(user?.hasOpenedCircle || user?.role?.toLowerCase() === 'admin') && (
+          <Link href="/dashboard/referrals" className="p-2 bg-slate-50 text-slate-400 rounded-xl hover:bg-blue-50 hover:text-blue-600 transition-all">
+            <ArrowRight size={20} />
+          </Link>
+        )}
       </div>
 
       {loading ? (

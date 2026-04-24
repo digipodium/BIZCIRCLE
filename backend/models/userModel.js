@@ -108,6 +108,11 @@ const userSchema = new mongoose.Schema({
     default: 0,
   },
 
+  hasOpenedCircle: {
+    type: Boolean,
+    default: false,
+  },
+
 }, { timestamps: true });
 
 module.exports = mongoose.model("User", userSchema);

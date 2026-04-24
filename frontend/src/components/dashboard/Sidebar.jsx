@@ -40,7 +40,12 @@ const Sidebar = () => {
     { name: "Profile", icon: UserCircle, href: "/profile" },
     { name: "Notifications", icon: Bell, href: "/notifications" },
     { name: "Support", icon: MessageSquareWarning, href: "/support" },
-  ];
+  ].filter(item => {
+    if (item.name === "Referrals") {
+      return user?.hasOpenedCircle || user?.role?.toLowerCase() === 'admin';
+    }
+    return true;
+  });
 
   const isAdmin = user?.role?.toLowerCase() === 'admin' || user?.isCircleAdmin;
   if (isAdmin) {

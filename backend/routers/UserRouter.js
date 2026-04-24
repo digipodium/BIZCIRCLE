@@ -10,7 +10,8 @@ const {
     getUserAnalytics,
     getAllUsers,
     connectUser,
-    getPublicProfile
+    getPublicProfile,
+    updateHasOpenedCircle
 } = require('../controllers/userController');
 const auth = require('../middleware/auth');
 const upload = require('../middleware/upload');
@@ -26,6 +27,7 @@ router.get('/all', auth, getAllUsers);
 router.put('/profile', auth, updateUserProfile);
 router.post('/upload-avatar', auth, upload.single('file'), uploadAvatar);
 router.put('/points', auth, updatePoints);
+router.put('/opened-circle', auth, updateHasOpenedCircle);
 router.post('/connect/:id', auth, connectUser);
 router.get('/:id', auth, getPublicProfile);
 

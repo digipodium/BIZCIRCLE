@@ -386,6 +386,26 @@ const getAllUsers = async (req, res) => {
   }
 };
 
+// PUT /user/opened-circle (requires auth middleware)
+const updateHasOpenedCircle = async (req, res) => {
+  try {
+    const user = await User.findByIdAndUpdate(
+      req.user.id,
+      { $set: { hasOpenedCircle: true } },
+      { new: true }
+    ).select('hasOpenedCircle');
+
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    res.json({ hasOpenedCircle: user.hasOpenedCircle });
+  } catch (err) {
+    console.error('Update opened circle error:', err);
+    res.status(500).json({ message: 'Server error' });
+  }
+};
+
 module.exports = {
   signup,
   login,
@@ -397,5 +417,6 @@ module.exports = {
   getPublicProfile,
   connectUser,
   getUserAnalytics,
-  getAllUsers
+  getAllUsers,
+  updateHasOpenedCircle
 };

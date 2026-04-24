@@ -11,6 +11,7 @@ import {
   Send
 } from "lucide-react";
 import { usePoints } from "@/context/PointsContext";
+import { useProfile } from "@/lib/useProfile";
 import api from "@/lib/axios";
 
 const EarnCard = ({ icon: Icon, title, points, action, completed }) => {
@@ -61,6 +62,7 @@ const EarnCard = ({ icon: Icon, title, points, action, completed }) => {
 const WaysToEarn = () => {
   const [referring, setReferring] = useState(false);
   const { earnPoints } = usePoints();
+  const { user } = useProfile();
 
   const handleReferral = async (e) => {
     e.preventDefault();
@@ -105,38 +107,40 @@ const WaysToEarn = () => {
       </div>
 
       {/* Referral Section */}
-      <div className="bg-gradient-to-br from-blue-600 to-blue-800 rounded-3xl p-8 text-white relative overflow-hidden shadow-2xl shadow-blue-200">
-        <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full -translate-y-1/2 translate-x-1/2 blur-3xl pointer-events-none" />
-        
-        <div className="relative z-10 flex flex-col lg:flex-row items-center justify-between gap-8">
-          <div className="max-w-md text-center lg:text-left">
-            <h3 className="text-2xl font-bold mb-2">Refer a friend & earn 30 pts</h3>
-            <p className="text-blue-100 text-sm leading-relaxed">
-              Grow the BizCircle community and get rewarded. Share your unique referral link or enter their email below.
-            </p>
-          </div>
+      {(user?.hasOpenedCircle || user?.role?.toLowerCase() === 'admin') && (
+        <div className="bg-gradient-to-br from-blue-600 to-blue-800 rounded-3xl p-8 text-white relative overflow-hidden shadow-2xl shadow-blue-200">
+          <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full -translate-y-1/2 translate-x-1/2 blur-3xl pointer-events-none" />
           
-          <form onSubmit={handleReferral} className="flex-1 w-full max-w-md">
-            <div className="flex bg-white/10 backdrop-blur-md p-1.5 rounded-2xl border border-white/20">
-              <input 
-                required
-                type="email" 
-                placeholder="friend@email.com" 
-                className="flex-1 bg-transparent px-4 py-3 placeholder:text-blue-200 outline-none text-white text-sm"
-              />
-              <button 
-                type="submit"
-                disabled={referring}
-                className="bg-white text-blue-700 px-6 py-3 rounded-xl font-bold text-sm hover:bg-blue-50 transition-colors flex items-center gap-2"
-              >
-                {referring ? 'Sending...' : (
-                  <>Send <Send size={16} /></>
-                )}
-              </button>
+          <div className="relative z-10 flex flex-col lg:flex-row items-center justify-between gap-8">
+            <div className="max-w-md text-center lg:text-left">
+              <h3 className="text-2xl font-bold mb-2">Refer a friend & earn 30 pts</h3>
+              <p className="text-blue-100 text-sm leading-relaxed">
+                Grow the BizCircle community and get rewarded. Share your unique referral link or enter their email below.
+              </p>
             </div>
-          </form>
+            
+            <form onSubmit={handleReferral} className="flex-1 w-full max-w-md">
+              <div className="flex bg-white/10 backdrop-blur-md p-1.5 rounded-2xl border border-white/20">
+                <input 
+                  required
+                  type="email" 
+                  placeholder="friend@email.com" 
+                  className="flex-1 bg-transparent px-4 py-3 placeholder:text-blue-200 outline-none text-white text-sm"
+                />
+                <button 
+                  type="submit"
+                  disabled={referring}
+                  className="bg-white text-blue-700 px-6 py-3 rounded-xl font-bold text-sm hover:bg-blue-50 transition-colors flex items-center gap-2"
+                >
+                  {referring ? 'Sending...' : (
+                    <>Send <Send size={16} /></>
+                  )}
+                </button>
+              </div>
+            </form>
+          </div>
         </div>
-      </div>
+      )}
     </section>
   );
 };

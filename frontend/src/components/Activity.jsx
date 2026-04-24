@@ -50,7 +50,12 @@ export default function Activity() {
           { label: "Circles Joined", value: user?.circles?.length || "0", color: "text-blue-600", bg: "bg-blue-50" },
           { label: "Referrals Given", value: user?.referralsGiven || "0", color: "text-amber-600", bg: "bg-amber-50" },
           { label: "Connections", value: user?.connections?.length || "0", color: "text-emerald-600", bg: "bg-emerald-50" },
-        ].map((s) => (
+        ].filter(s => {
+          if (s.label === "Referrals Given") {
+            return user?.hasOpenedCircle || user?.role?.toLowerCase() === 'admin';
+          }
+          return true;
+        }).map((s) => (
           <div key={s.label} className={`${s.bg} rounded-2xl p-4 text-center border border-transparent`}>
             <p className={`text-2xl font-bold ${s.color}`}>{s.value}</p>
             <p className="text-[11px] text-slate-500 mt-1 leading-tight">{s.label}</p>
