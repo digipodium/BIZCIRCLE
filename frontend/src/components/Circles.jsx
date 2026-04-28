@@ -50,12 +50,12 @@ export default function Circles() {
   const userGroupIds = user?.joinedGroups?.map((g) => g._id || g) || [];
   const allJoinedIds = [...userCircleIds, ...userGroupIds];
 
-  const joinedCircles = [
-    ...(allCircles.filter((c) => userCircleIds.includes(c._id))),
-    ...(user?.joinedGroups || [])
-  ];
+  const joinedCircles = Array.from(new Map([
+    ...allCircles.filter(c => userCircleIds.includes(c._id)).map(c => [c._id.toString(), c]),
+    ...(user?.joinedGroups || []).map(g => [g._id.toString(), g])
+  ]).values());
   
-  const availableCircles = allCircles.filter((c) => !allJoinedIds.includes(c._id));
+  const availableCircles = allCircles;
 
   const showToast = (msg, type = "error") => {
     setToast({ msg, type });
@@ -189,39 +189,46 @@ export default function Circles() {
             const canJoin = !user?.primaryDomain || isSimilarDomain(user.primaryDomain, circle);
             const limitReached = false; // Limit removed
 
+            const isJoined = allJoinedIds.includes(circle._id);
+
             return (
               <div
                 key={circle._id}
                 className={`flex items-center gap-4 p-4 rounded-xl border transition-all duration-200 hover:shadow-sm
-                  ${!canJoin ? "bg-slate-50 border-slate-100 opacity-70" : `${c.bg} ${c.border}`}`}
+                  ${!canJoin ? "bg-slate-50 border-slate-100 opacity-70" : isJoined ? "bg-slate-50 border-slate-200" : `${c.bg} ${c.border}`}`}
               >
-                <div className={`w-10 h-10 rounded-xl ${canJoin ? c.dot : "bg-slate-300"} flex items-center justify-center text-white font-bold text-sm flex-shrink-0`}>
+                <div className={`w-10 h-10 rounded-xl ${isJoined ? "bg-slate-300" : canJoin ? c.dot : "bg-slate-300"} flex items-center justify-center text-white font-bold text-sm flex-shrink-0`}>
                   {circle.name[0]}
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 flex-wrap">
-                    <p className={`font-bold text-sm ${canJoin ? c.text : "text-slate-500"}`}>{circle.name}</p>
-                    {!canJoin && (
+                    <p className={`font-bold text-sm ${isJoined ? "text-slate-600" : canJoin ? c.text : "text-slate-500"}`}>{circle.name}</p>
+                    {isJoined && (
+                      <span className="text-[10px] bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded-full font-bold uppercase tracking-wider">Joined</span>
+                    )}
+                    {!canJoin && !isJoined && (
                       <span className="text-[10px] bg-slate-200 text-slate-500 px-2 py-0.5 rounded-full font-medium">Different domain</span>
                     )}
                   </div>
                   <div className="flex flex-wrap items-center gap-3 mt-1 text-xs text-slate-500">
-                    <span className={`${canJoin ? c.badge : "bg-slate-100 text-slate-500"} px-2 py-0.5 rounded-full font-medium`}>{circle.domain}</span>
+                    <span className={`${isJoined ? "bg-slate-200 text-slate-600" : canJoin ? c.badge : "bg-slate-100 text-slate-500"} px-2 py-0.5 rounded-full font-medium`}>{circle.domain}</span>
                     <span className="flex items-center gap-1"><MapPin size={10} />{circle.location}</span>
                     <span className="flex items-center gap-1"><Users size={10} />{circle.memberCount || circle.members} members</span>
                   </div>
                 </div>
                 <button
-                  onClick={() => handleJoin(circle)}
-                  disabled={(limitReached && canJoin) || !canJoin || actionLoading === circle._id}
+                  onClick={() => !isJoined && handleJoin(circle)}
+                  disabled={isJoined || (limitReached && canJoin) || !canJoin || actionLoading === circle._id}
                   className={`flex-shrink-0 flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-lg transition-all duration-150
-                    ${canJoin && !limitReached
-                      ? `${c.btn} text-white hover:scale-105 active:scale-95 shadow-sm`
-                      : "bg-slate-100 text-slate-400 cursor-not-allowed"
+                    ${isJoined 
+                      ? "bg-slate-100 text-slate-400 cursor-default"
+                      : canJoin && !limitReached
+                        ? `${c.btn} text-white hover:scale-105 active:scale-95 shadow-sm`
+                        : "bg-slate-100 text-slate-400 cursor-not-allowed"
                     }`}
                 >
-                  {actionLoading === circle._id ? <Loader2 size={12} className="animate-spin" /> : <Plus size={12} />}
-                  Join
+                  {actionLoading === circle._id ? <Loader2 size={12} className="animate-spin" /> : isJoined ? <Check size={12} /> : <Plus size={12} />}
+                  {isJoined ? "Joined" : "Join"}
                 </button>
               </div>
             );
