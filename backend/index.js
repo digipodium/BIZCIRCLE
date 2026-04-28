@@ -14,6 +14,7 @@ const NotificationRouter = require('./routers/NotificationRouter');
 const FeedbackRouter = require('./routers/FeedbackRouter');
 const SearchRouter = require('./routers/SearchRouter');
 const AdminNotificationRouter = require('./routers/AdminNotificationRouter');
+const AdminRouter = require('./routers/AdminRouter');
 
 const app = express();
 const server = http.createServer(app);
@@ -42,7 +43,7 @@ app.use('/api/notifications', NotificationRouter);
 app.use('/api/feedback', FeedbackRouter);
 app.use('/api', SearchRouter);
 app.use('/api', ActivityRouter);
-app.use('/api/admin/notifications', AdminNotificationRouter);
+app.use('/api/admin', AdminRouter);
 
 // Health check endpoint
 app.get('/api/health', (req, res) => {

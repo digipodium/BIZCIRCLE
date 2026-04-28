@@ -45,10 +45,22 @@ const MyCirclesPage = () => {
           </div>
 
           <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
-            <div className="xl:col-span-2">
+            <div className="xl:col-span-2 space-y-12">
               <CircleList 
-                title="Active Circles" 
-                circles={user?.joinedGroups || []} 
+                title="Circles Created by Me" 
+                circles={user?.joinedGroups?.filter(c => 
+                  (c.createdBy?._id || c.createdBy) === user?._id || 
+                  (c.createdBy?._id || c.createdBy) === user?.id
+                ) || []} 
+                loading={loading}
+              />
+
+              <CircleList 
+                title="Circles Joined by Me" 
+                circles={user?.joinedGroups?.filter(c => 
+                  (c.createdBy?._id || c.createdBy) !== user?._id && 
+                  (c.createdBy?._id || c.createdBy) !== user?.id
+                ) || []} 
                 loading={loading}
               />
             </div>

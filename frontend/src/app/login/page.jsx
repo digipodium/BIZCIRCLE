@@ -32,7 +32,11 @@ export default function LoginPage() {
         idToken: credentialResponse.credential 
       });
       login(data.token, data.user);
-      router.push("/profile");
+      if (data.user.role === 'admin') {
+        router.push("/admin");
+      } else {
+        router.push("/profile");
+      }
     } catch (err) {
       setError(err.response?.data?.message || "Google sign-in failed.");
     } finally {
@@ -47,7 +51,11 @@ export default function LoginPage() {
     try {
       const { data } = await api.post("/user/login", { email, password });
       login(data.token, data.user);
-      router.push("/profile");
+      if (data.user.role === 'admin') {
+        router.push("/admin");
+      } else {
+        router.push("/profile");
+      }
     } catch (err) {
       setError(err.response?.data?.message || err.response?.data?.error || "Login failed. Please try again.");
     } finally {

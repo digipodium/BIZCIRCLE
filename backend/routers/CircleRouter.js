@@ -4,6 +4,7 @@ const Circle = require('../models/circleModel');
 const CircleMember = require('../models/circleMemberModel');
 const Activity = require('../models/activityModel');
 const User = require('../models/userModel');
+const AdminNotification = require('../models/adminNotificationModel');
 const auth = require('../middleware/auth');
 const { createNotification } = require('../controllers/notificationController');
 
@@ -318,6 +319,11 @@ router.post('/join', auth, async (req, res) => {
                     type: 'connection_accepted',
                     message: `You have successfully joined "${circle.name}"!`,
                     priority: 'medium'
+                }),
+                AdminNotification.create({
+                    message: `New Member: ${user.name} joined circle "${circle.name}"`,
+                    type: 'user_joined_circle',
+                    priority: 'low'
                 })
             ]);
         } else if (status === 'Pending') {
@@ -396,6 +402,11 @@ router.put('/:id/members/:memberId', auth, async (req, res) => {
                     type: 'connection_accepted',
                     message: `Your request to join "${circle.name}" has been approved!`,
                     priority: 'high',
+                }),
+                AdminNotification.create({
+                    message: `New Member: ${member.user.name} joined circle "${circle.name}" (Approved)`,
+                    type: 'user_joined_circle',
+                    priority: 'low'
                 })
             ]);
         }

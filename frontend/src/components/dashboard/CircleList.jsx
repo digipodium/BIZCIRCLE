@@ -122,7 +122,7 @@ const CircleList = ({ title, circles, showLimitMessage, id, loading }) => {
       ) : circles.length > 0 ? (
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
           {circles.map((circle, i) => (
-            <CircleCard key={circle._id || i} {...circle} isJoined={title === "My Circles"} />
+            <CircleCard key={circle._id || i} {...circle} isJoined={circle.isJoined || title.includes("My Circles")} />
           ))}
         </div>
       ) : (

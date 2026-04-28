@@ -9,7 +9,7 @@ const adminNotificationSchema = new Schema(
     type: {
       type: String,
       required: true,
-      enum: ['user_registered', 'report_pending', 'user_flagged', 'group_created', 'system_config', 'test'],
+      enum: ['user_registered', 'report_pending', 'user_flagged', 'group_created', 'system_config', 'test', 'user_joined_circle'],
       default: 'system_config'
     },
     priority: {
