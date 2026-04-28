@@ -8,6 +8,7 @@ import {
 } from "lucide-react";
 import { useNotifications } from "@/context/NotificationContext";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 
 // ─────────────────────────────────────────────────────────────
 // CONFIG
@@ -52,19 +53,37 @@ function timeAgo(date) {
 // SINGLE ROW IN DROPDOWN
 // ─────────────────────────────────────────────────────────────
 
-const DropdownRow = ({ notif, onRead, onDelete }) => {
+// Navigation map: notification type → link
+const NOTIF_LINKS = {
+  referral_received: "/dashboard/referrals",
+  referral_sent:     "/dashboard/referrals",
+  new_message:       "/dashboard/my-circles",
+};
+
+const DropdownRow = ({ notif, onRead, onDelete, onClose }) => {
   const cat   = CATEGORY_CONFIG[notif.category] || CATEGORY_CONFIG.reminder;
   const Icon  = cat.icon;
-  const unread = !notif.read;   // field is `read` (not `isRead`) per Mongoose model
+  const unread = !notif.read;
   const senderName = notif.sender?.name || "BizCircle";
+  const router = useRouter();
+
+  const handleClick = () => {
+    if (unread) onRead(notif._id);
+    const link = NOTIF_LINKS[notif.type];
+    if (link) {
+      onClose?.();
+      router.push(link);
+    }
+  };
 
   return (
     <div
-      onClick={() => unread && onRead(notif._id)}
+      onClick={handleClick}
       className={`
         group relative flex gap-3 px-4 py-3.5 cursor-pointer transition-all duration-150
         hover:bg-slate-50 border-b border-slate-50 last:border-0
         ${unread ? "bg-blue-50/40" : ""}
+        ${NOTIF_LINKS[notif.type] ? "hover:bg-blue-50/60" : ""}
       `}
     >
       {/* Unread left bar */}
@@ -96,6 +115,11 @@ const DropdownRow = ({ notif, onRead, onDelete }) => {
           <span className="text-[10px] text-slate-400">{timeAgo(notif.createdAt)}</span>
           <span className={`text-[10px] font-semibold ${cat.text}`}>{cat.label}</span>
         </div>
+        {NOTIF_LINKS[notif.type] && (
+          <span className="text-[10px] text-blue-500 font-bold mt-0.5 flex items-center gap-0.5">
+            <ArrowRight size={9} /> View details
+          </span>
+        )}
       </div>
 
       {/* Delete — hover only */}
@@ -217,6 +241,7 @@ const NotificationBell = ({ align = "right" }) => {
                   notif={n}
                   onRead={markRead}
                   onDelete={deleteNotif}
+                  onClose={() => setOpen(false)}
                 />
               ))
             )}
