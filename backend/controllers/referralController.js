@@ -1,6 +1,7 @@
 const Referral = require('../models/referralModel');
 const User = require('../models/userModel');
 const Activity = require('../models/activityModel');
+const CircleMember = require('../models/circleMemberModel');
 const { createNotification } = require('./notificationController');
 const crypto = require('crypto');
 const { sendVerificationEmail, sendReferralReceivedEmail } = require('../utils/mailer');
@@ -9,18 +10,24 @@ const createReferral = async (req, res) => {
     try {
         const { candidateName, candidateEmail, targetCircle, role, message, receiverId } = req.body;
         const senderId = req.user.id;
-        const senderName = req.user.name;
-        const sender = await User.findById(senderId).select('circles');
-        if (!sender.circles || sender.circles.length === 0) {
+
+        // Fetch sender name from DB (JWT only carries id + role)
+        const senderUser = await User.findById(senderId).select('name');
+        if (!senderUser) return res.status(404).json({ message: 'Sender not found' });
+        const senderName = senderUser.name;
+
+        // Validate sender has joined at least one circle (via CircleMember)
+        const senderMembership = await CircleMember.findOne({ user: senderId, status: 'Approved' });
+        if (!senderMembership) {
             return res.status(403).json({ 
                 message: 'You must join at least one circle to share referrals.' 
             });
         }
 
-        // Check if receiver has joined any circles (if provided)
+        // Validate receiver has joined at least one circle (if provided)
         if (receiverId) {
-            const receiver = await User.findById(receiverId).select('circles');
-            if (!receiver || !receiver.circles || receiver.circles.length === 0) {
+            const receiverMembership = await CircleMember.findOne({ user: receiverId, status: 'Approved' });
+            if (!receiverMembership) {
                 return res.status(400).json({ 
                     message: 'The selected member has not joined any circles yet.' 
                 });

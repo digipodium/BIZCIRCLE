@@ -11,6 +11,7 @@ import DiscoverSection from "@/components/dashboard/DiscoverSection";
 import UpcomingMeetings from "@/components/dashboard/UpcomingMeetings";
 import NetworkingAnalytics from "@/components/dashboard/NetworkingAnalytics";
 import MeetingReminder from "@/components/dashboard/MeetingReminder";
+import ReceivedReferralsWidget from "@/components/dashboard/ReceivedReferralsWidget";
 import { useProfile } from "@/lib/useProfile";
 import api from "@/lib/axios";
 
@@ -93,6 +94,7 @@ const DashboardPage = () => {
             {/* Right Column (Sidebar Content) */}
             <div className="space-y-8">
               <UpcomingMeetings />
+              <ReceivedReferralsWidget />
               <ProfileCard />
               <ActivityFeed />
               
