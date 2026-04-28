@@ -52,12 +52,19 @@ const createReferral = async (req, res) => {
 
         // Email to Candidate (Verification)
         const verificationLink = `${frontendUrl}/verify-referral?token=${verificationToken}`;
-        await sendVerificationEmail({
-            to: candidateEmail,
-            candidateName,
-            senderName,
-            verificationLink
-        });
+        try {
+            await sendVerificationEmail({
+                to: candidateEmail,
+                candidateName,
+                senderName,
+                verificationLink
+            });
+        } catch (emailErr) {
+            // Non-fatal: Resend free tier only allows sending to the verified account email.
+            // Referral is saved; use the link below for manual testing.
+            console.warn('⚠️  Verification email could not be sent (Resend restriction):', emailErr?.message);
+            console.info('🔗 Manual verification link:', verificationLink);
+        }
 
         // Notification and Email to Receiver if internal
         if (receiverId) {
@@ -193,14 +200,26 @@ const resendVerification = async (req, res) => {
         const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
         const verificationLink = `${frontendUrl}/verify-referral?token=${newToken}`;
 
-        await sendVerificationEmail({
-            to: referral.candidateEmail,
-            candidateName: referral.candidateName,
-            senderName: req.user.name,
-            verificationLink
-        });
+        let emailSent = true;
+        try {
+            await sendVerificationEmail({
+                to: referral.candidateEmail,
+                candidateName: referral.candidateName,
+                senderName: req.user.name,
+                verificationLink
+            });
+        } catch (emailErr) {
+            emailSent = false;
+            console.warn('⚠️  Resend verification email failed (Resend restriction):', emailErr?.message);
+            console.info('🔗 Manual verification link:', verificationLink);
+        }
 
-        res.json({ message: 'Verification email resent' });
+        res.json({
+            message: emailSent
+                ? 'Verification email resent'
+                : 'Token renewed — email could not be sent (Resend domain restriction). Use the console link for manual testing.',
+            verificationLink: emailSent ? undefined : verificationLink
+        });
     } catch (err) {
         console.error('Resend verification error:', err);
         res.status(500).json({ message: 'Server error' });
