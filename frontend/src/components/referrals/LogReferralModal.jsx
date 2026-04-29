@@ -113,7 +113,7 @@ export default function LogReferralModal({ isOpen, onClose, onSuccess }) {
           </button>
         </div>
 
-        {(!user?.circles || user.circles.length === 0) ? (
+        {((!user?.circles || user.circles.length === 0) && (!user?.joinedGroups || user.joinedGroups.length === 0)) ? (
           <div className="p-8 text-center space-y-6">
             <div className="w-20 h-20 bg-amber-50 rounded-[2rem] flex items-center justify-center mx-auto text-amber-500 border border-amber-100">
               <Users size={40} />
@@ -149,7 +149,7 @@ export default function LogReferralModal({ isOpen, onClose, onSuccess }) {
             >
               <option value="">Choose a connection you met with...</option>
               {users
-                .filter(u => u.circles && u.circles.length > 0)
+                .filter(u => u._id !== (user?.id || user?._id))
                 .map(u => (
                 <option key={u._id} value={u._id}>
                   {u.name} {u.headline ? `- ${u.headline}` : ''}

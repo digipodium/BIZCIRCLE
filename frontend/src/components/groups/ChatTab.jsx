@@ -10,7 +10,8 @@ export default function ChatTab({ groupId }) {
   const [file, setFile] = useState(null);
   const socketRef = useRef(null);
   const messagesEndRef = useRef(null);
-  const user = JSON.parse(typeof window !== 'undefined' ? localStorage.getItem('user') || '{}' : '{}');
+  const userId = typeof window !== 'undefined' ? localStorage.getItem('userId') : null;
+  const userName = typeof window !== 'undefined' ? localStorage.getItem('userName') : null;
 
   useEffect(() => {
     // Fetch initial messages
@@ -54,7 +55,7 @@ export default function ChatTab({ groupId }) {
 
     const msgData = {
       group: groupId,
-      sender: user.id,
+      sender: userId,
       content: input,
       fileUrl
     };
@@ -68,7 +69,7 @@ export default function ChatTab({ groupId }) {
     <div className="flex flex-col h-[600px] bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
       <div className="flex-1 overflow-y-auto p-6 space-y-4 bg-gray-50/50">
         {messages.map((msg, i) => {
-           const isMe = msg.sender?._id === user.id;
+           const isMe = msg.sender?._id === userId || msg.sender === userId;
            return (
              <div key={i} className={`flex ${isMe ? 'justify-end' : 'justify-start'}`}>
                <div className={`max-w-[70%] rounded-2xl px-5 py-3 ${isMe ? 'bg-blue-600 text-white rounded-br-sm' : 'bg-white border border-gray-100 shadow-sm rounded-bl-sm text-gray-800'}`}>

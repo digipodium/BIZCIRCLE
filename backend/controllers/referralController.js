@@ -1,7 +1,8 @@
 const Referral = require('../models/referralModel');
 const User = require('../models/userModel');
 const Activity = require('../models/activityModel');
-const Notification = require('../models/notificationModel');
+const CircleMember = require('../models/circleMemberModel');
+const { createNotification } = require('./notificationController');
 const crypto = require('crypto');
 const { sendVerificationEmail, sendReferralReceivedEmail } = require('../utils/mailer');
 
@@ -9,18 +10,24 @@ const createReferral = async (req, res) => {
     try {
         const { candidateName, candidateEmail, targetCircle, role, message, receiverId } = req.body;
         const senderId = req.user.id;
-        const senderName = req.user.name;
-        const sender = await User.findById(senderId).select('circles');
-        if (!sender.circles || sender.circles.length === 0) {
+
+        // Fetch sender name from DB (JWT only carries id + role)
+        const senderUser = await User.findById(senderId).select('name');
+        if (!senderUser) return res.status(404).json({ message: 'Sender not found' });
+        const senderName = senderUser.name;
+
+        // Validate sender has joined at least one circle (via CircleMember)
+        const senderMembership = await CircleMember.findOne({ user: senderId, status: 'Approved' });
+        if (!senderMembership) {
             return res.status(403).json({ 
                 message: 'You must join at least one circle to share referrals.' 
             });
         }
 
-        // Check if receiver has joined any circles (if provided)
+        // Validate receiver has joined at least one circle (if provided)
         if (receiverId) {
-            const receiver = await User.findById(receiverId).select('circles');
-            if (!receiver || !receiver.circles || receiver.circles.length === 0) {
+            const receiverMembership = await CircleMember.findOne({ user: receiverId, status: 'Approved' });
+            if (!receiverMembership) {
                 return res.status(400).json({ 
                     message: 'The selected member has not joined any circles yet.' 
                 });
@@ -52,46 +59,52 @@ const createReferral = async (req, res) => {
 
         // Email to Candidate (Verification)
         const verificationLink = `${frontendUrl}/verify-referral?token=${verificationToken}`;
-        await sendVerificationEmail({
-            to: candidateEmail,
-            candidateName,
-            senderName,
-            verificationLink
-        });
+        try {
+            await sendVerificationEmail({
+                to: candidateEmail,
+                candidateName,
+                senderName,
+                verificationLink
+            });
+        } catch (emailErr) {
+            // Non-fatal: Resend free tier only allows sending to the verified account email.
+            // Referral is saved; use the link below for manual testing.
+            console.warn('⚠️  Verification email could not be sent (Resend restriction):', emailErr?.message);
+            console.info('🔗 Manual verification link:', verificationLink);
+        }
 
         // Notification and Email to Receiver if internal
         if (receiverId) {
             try {
                 const receiverUser = await User.findById(receiverId).select('name email');
                 if (receiverUser) {
-                    // Create in-app notification
-                    await Notification.create({
-                        recipient: receiverUser._id,
-                        sender: senderId,
+                    // Create in-app notification + emit real-time socket event
+                    const io = req.app.get('io');
+                    await createNotification(io, {
+                        userId: receiverUser._id,
                         category: 'referral',
                         type: 'referral_received',
-                        message: `${senderName} has sent you a new referral for ${candidateName}.`,
-                        priority: 'high',
-                        linkTo: '/dashboard/referrals',
-                        meta: new Map([
-                            ['candidateName', candidateName],
-                            ['senderName', senderName]
-                        ])
+                        message: `${senderName} has sent you a new referral for ${candidateName}. View it in your Referral Center.`,
+                        priority: 'high'
                     });
 
-                    // Send email notification
+                    // Send email notification (non-fatal — Resend free tier restriction)
                     if (receiverUser.email) {
-                        await sendReferralReceivedEmail({
-                            to: receiverUser.email,
-                            receiverName: receiverUser.name,
-                            senderName,
-                            candidateName
-                        });
+                        try {
+                            await sendReferralReceivedEmail({
+                                to: receiverUser.email,
+                                receiverName: receiverUser.name,
+                                senderName,
+                                candidateName
+                            });
+                        } catch (emailErr) {
+                            console.warn('⚠️  Receiver email could not be sent (Resend restriction):', emailErr?.message);
+                        }
                     }
                 }
             } catch (notifErr) {
                 console.error('Failed to send receiver notification/email:', notifErr);
-                // Non-fatal error for the request
+                // Non-fatal — referral itself was created successfully
             }
         }
 
@@ -193,14 +206,26 @@ const resendVerification = async (req, res) => {
         const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
         const verificationLink = `${frontendUrl}/verify-referral?token=${newToken}`;
 
-        await sendVerificationEmail({
-            to: referral.candidateEmail,
-            candidateName: referral.candidateName,
-            senderName: req.user.name,
-            verificationLink
-        });
+        let emailSent = true;
+        try {
+            await sendVerificationEmail({
+                to: referral.candidateEmail,
+                candidateName: referral.candidateName,
+                senderName: req.user.name,
+                verificationLink
+            });
+        } catch (emailErr) {
+            emailSent = false;
+            console.warn('⚠️  Resend verification email failed (Resend restriction):', emailErr?.message);
+            console.info('🔗 Manual verification link:', verificationLink);
+        }
 
-        res.json({ message: 'Verification email resent' });
+        res.json({
+            message: emailSent
+                ? 'Verification email resent'
+                : 'Token renewed — email could not be sent (Resend domain restriction). Use the console link for manual testing.',
+            verificationLink: emailSent ? undefined : verificationLink
+        });
     } catch (err) {
         console.error('Resend verification error:', err);
         res.status(500).json({ message: 'Server error' });
