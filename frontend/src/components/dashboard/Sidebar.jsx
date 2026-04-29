@@ -12,7 +12,8 @@ import {
   Star,
   Bell,
   MessageSquareWarning,
-  Search
+  Search,
+  Settings
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -36,6 +37,10 @@ const Sidebar = () => {
     { name: "Notifications", icon: Bell, href: "/notifications" },
     { name: "Support", icon: MessageSquareWarning, href: "/support" },
   ];
+
+  if (user?.role === 'admin' || user?.isCircleAdmin) {
+    menuItems.push({ name: "Admin Panel", icon: Settings, href: "/admin" });
+  }
 
 
 

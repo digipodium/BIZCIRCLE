@@ -38,7 +38,9 @@ export default function ProtectedRoute({ children, allowedRoles = ["user", "admi
   }
 
   // If we have a user and their role is allowed, render children
-  if (user && allowedRoles.includes(user.role)) {
+  const isAllowed = allowedRoles.includes(user.role) || (allowedRoles.includes("admin") && user.isCircleAdmin);
+  
+  if (user && isAllowed) {
     return <>{children}</>;
   }
 

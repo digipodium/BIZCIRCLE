@@ -14,8 +14,7 @@ export default function EventsTab({ targetId, targetModel = 'Group', members = [
   
   const currentUserId = user?._id || user?.id || localStorage.getItem('userId');
   const isSystemAdmin = user?.role?.toLowerCase() === 'admin';
-  const isCircleAdmin = members.some(m => (m.user?._id === currentUserId || m.user === currentUserId) && m.role === 'Admin' && m.status === 'Approved');
-  const canSchedule = isAdmin || isSystemAdmin || isCircleAdmin;
+  const canSchedule = isAdmin || isSystemAdmin;
   
   const fetchEvents = useCallback(async () => {
     try {

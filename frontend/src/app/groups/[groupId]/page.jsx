@@ -20,6 +20,7 @@ export default function GroupDetail({ params }) {
   const [isJoined, setIsJoined] = useState(false);
   const [isPending, setIsPending] = useState(false);
   const [isJoining, setIsJoining] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
 
   const fetchGroup = () => {
     setLoading(true);
@@ -27,6 +28,7 @@ export default function GroupDetail({ params }) {
       setGroup({ ...res.data.circle, members: res.data.members || [] });
       setIsJoined(res.data.isJoined);
       setIsPending(res.data.isPending);
+      setIsAdmin(res.data.isAdmin || false);
     }).catch(err => {
       console.error(err);
       // Removed mock fallback as per user request to not view circle without approval
@@ -130,12 +132,14 @@ export default function GroupDetail({ params }) {
                 {isJoining ? "Processing..." : isPending ? "Request Pending" : "Join Circle"}
               </button>
             ) : (
-              <button 
-                onClick={() => router.push('/admin')}
-                className="flex-1 md:flex-none flex items-center justify-center space-x-2 bg-slate-900 text-white px-8 py-3 rounded-xl hover:bg-slate-800 transition-colors font-bold shadow-lg"
-              >
-                <Settings className="w-4 h-4" /> <span>Manage</span>
-              </button>
+              isAdmin && (
+                <button 
+                  onClick={() => router.push('/admin')}
+                  className="flex-1 md:flex-none flex items-center justify-center space-x-2 bg-slate-900 text-white px-8 py-3 rounded-xl hover:bg-slate-800 transition-colors font-bold shadow-lg"
+                >
+                  <Settings className="w-4 h-4" /> <span>Manage</span>
+                </button>
+              )
             )}
             <button 
               className="p-3 bg-white border border-slate-200 text-slate-600 rounded-xl hover:bg-slate-50 transition-colors"
@@ -197,7 +201,7 @@ export default function GroupDetail({ params }) {
           <div className="mt-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
             {activeTab === 'chat' && <ChatTab groupId={groupId} />}
             {activeTab === 'members' && <MembersTab members={group?.members || []} />}
-            {activeTab === 'events' && <EventsTab targetId={groupId} targetModel="Circle" members={group?.members || []} />}
+            {activeTab === 'events' && <EventsTab targetId={groupId} targetModel="Circle" members={group?.members || []} isAdmin={isAdmin} />}
             {activeTab === 'polls' && <PollsTab groupId={groupId} />}
           </div>
         </>
